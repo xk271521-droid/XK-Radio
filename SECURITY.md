@@ -1,29 +1,27 @@
-# Security Policy
+# Security
 
-## Supported Versions
+## 安装来源
 
-当前只维护最新公开版本。
+XK Radio 的正式安装包只从你的 GitHub Release 分发：
 
-## Installer Safety Notice
+https://github.com/xk271521-droid/XK-Radio/releases
 
-`v1.0.10` 及更早旧安装包不再建议继续安装或传播。请将旧 `.exe` 安装包视为不可信历史产物并隔离保留；需要安装 Mineradio 时，请使用 `v1.1.0` 或更新版本的 GitHub Release 安装包。
+推荐安装包文件名：
 
-`v1.1.0` 不作为 `v1.0.10` 的软件内本地更新包发布。旧版本用户请手动下载新版安装包，卸载旧版本后进行纯净安装。
+```text
+XKRadio-版本号-Setup.exe
+```
 
-## Reporting a Vulnerability
+不要把 `Source code`、`.blockmap`、`latest.yml` 或 `win-unpacked` 当成正式安装包发给普通用户。
 
-如果你发现安全问题，请通过 GitHub Issues 或仓库作者主页联系作者。
+## 未签名提示
 
-请不要在公开 Issue 中直接贴出 Cookie、Token、账号信息、私密链接或可复现的敏感数据。
+如果没有购买代码签名证书，Windows SmartScreen、浏览器或杀毒软件可能提示风险。这不等于一定有病毒，但发布时应尽量提供 SHA256 校验值，并提醒用户只从你的 Release 下载。
 
-## Sensitive Data
+## 用户账号安全
 
-Mineradio 不应收集或上传用户 Cookie。用户登录状态应保存在本地用户数据目录中。
+XK Radio 不应收集或上传用户 Cookie。登录状态应保存在本地用户数据目录中。开发调试时不要打印完整 Cookie，也不要把日志提交到仓库。
 
-如果你要提交问题反馈，请先确认没有附带：
+## 漏洞处理
 
-- `.cookie`
-- `.qq-cookie`
-- 本地音乐文件
-- 用户账号截图
-- 调试日志中的 Cookie、Token 或隐私路径
+如果发现会泄露 Cookie、误删用户文件、错误覆盖安装目录、绕过第三方平台限制或导致远程代码执行的问题，应优先修复再发布。

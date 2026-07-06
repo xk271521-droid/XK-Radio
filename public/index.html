@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mineradio</title>
+<title>XK Radio</title>
 <meta name="referrer" content="no-referrer">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Inter:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
 <script src="vendor/three.r128.min.js"></script>
@@ -1887,9 +1887,9 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 
   <!-- 主内容 -->
   <div class="splash-content">
-    <div class="splash-wordmark" id="splash-wordmark" aria-label="Mineradio">
-      <span class="splash-word-mine">Mine</span>
-      <span class="splash-word-radio" aria-label="radio">rad<span class="splash-word-i" aria-hidden="true"></span><span class="splash-word-o">o</span></span>
+    <div class="splash-wordmark" id="splash-wordmark" aria-label="XK Radio">
+      <span class="splash-word-mine">XK</span>
+      <span class="splash-word-radio" aria-label="Radio">Radio</span>
     </div>
     <div class="splash-signal-line"></div>
     <div class="splash-sub">private visual radio</div>
@@ -1928,7 +1928,7 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 </div>
 
 <!-- 空场 Home -->
-<section id="empty-home" aria-label="Mineradio home">
+<section id="empty-home" aria-label="XK Radio home">
   <div class="empty-home-shell">
     <div class="home-hero">
       <div class="home-hero-inner home-construction-inner">
@@ -2005,7 +2005,7 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 <!-- 控制台 (右侧贴边自动显示, 无关闭按钮) -->
 <div id="fx-panel">
   <div class="fx-head">
-    <div><div class="fx-title">视觉控制台</div><div class="fx-sub">MINERADIO VISUALS · 鼠标移开自动隐藏</div></div>
+    <div><div class="fx-title">视觉控制台</div><div class="fx-sub">XK RADIO VISUALS · 鼠标移开自动隐藏</div></div>
   </div>
 
   <div class="fx-section-label">视觉预设</div>
@@ -2470,7 +2470,7 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
       <button id="login-provider-qq" class="qq" type="button" onclick="setLoginProvider('qq')">QQ 音乐</button>
     </div>
     <div class="login-intro">
-      <div class="login-intro-kicker">Mineradio</div>
+      <div class="login-intro-kicker">XK Radio</div>
       <div class="login-intro-title">音乐播放器，也是一座视觉舞台</div>
       <div class="login-intro-body">搜索或导入一首歌即可播放；登录后会同步歌单、红心和播客，让封面、歌词和粒子跟着音乐动起来。</div>
     </div>
@@ -2619,7 +2619,7 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
     <div class="update-panel-inner">
       <div class="update-panel-head">
         <div>
-          <div class="update-kicker">MINERADIO</div>
+          <div class="update-kicker">XK RADIO</div>
           <div id="update-modal-title" class="update-title">New release</div>
           <div id="update-modal-version" class="update-version">v1.0.10</div>
         </div>
@@ -12235,7 +12235,7 @@ function updateLocalBeatModal() {
   var desc = document.getElementById('local-beat-desc');
   if (desc) desc.textContent = mode === 'dj'
     ? '适合 DJ、长混音或鼓点密集的本地音频，会使用更稳定的低频锁拍并进入 DJ 视觉驱动。'
-    : '适合普通歌曲和日常播放，会沿用 Mineradio 电影视角的综合节奏分析。';
+    : '适合普通歌曲和日常播放，会沿用 XK Radio 电影视角的综合节奏分析。';
   var start = document.getElementById('local-beat-start-btn');
   var cancel = document.getElementById('local-beat-cancel-btn');
   var later = document.getElementById('local-beat-later-btn');
@@ -15564,7 +15564,7 @@ function renderHomeDiscover() {
   var weatherKicker = document.getElementById('home-weather-kicker');
   var weatherMeta = document.getElementById('home-weather-meta');
   if (weatherTitle) weatherTitle.textContent = '我的音乐库';
-  if (weatherKicker) weatherKicker.textContent = 'Mineradio · Your Library';
+  if (weatherKicker) weatherKicker.textContent = 'XK Radio · Your Library';
   if (sub) {
     if (loggedOutHome) sub.textContent = '登录后会把你的歌单、常听歌手和最近播放放在这里；也可以直接搜索或导入本地音乐。';
     else sub.textContent = '从你的歌单、最近播放和常听歌手开始，天气电台放在需要氛围的时候再开。';
@@ -20539,7 +20539,7 @@ function userFxArchiveExportPayload(slot) {
   };
 }
 function safeArchiveFileName(name) {
-  return String(name || 'Mineradio 用户存档').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 48) + '.json';
+  return String(name || 'XK Radio 用户存档').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 48) + '.json';
 }
 function exportUserFxArchive(index) {
   var slot = userFxArchiveAt(index);
@@ -21958,7 +21958,7 @@ function ensureHotkeyModal() {
   modal.innerHTML =
     '<div class="hotkey-dialog" role="dialog" aria-modal="true" aria-label="热键设置">' +
       '<div class="hotkey-head">' +
-        '<div><div class="hotkey-title">热键设置</div><div class="hotkey-sub">局内热键只在 Mineradio 窗口内生效；全局热键会向系统注册，并检测是否被占用。</div></div>' +
+        '<div><div class="hotkey-title">热键设置</div><div class="hotkey-sub">局内热键只在 XK Radio 窗口内生效；全局热键会向系统注册，并检测是否被占用。</div></div>' +
         '<button class="hotkey-close" type="button" data-hotkey-close aria-label="关闭">×</button>' +
       '</div>' +
       '<div class="hotkey-toolbar">' +
@@ -22804,7 +22804,7 @@ function syncUpdatePreviewStateClass() {
   if (foot) {
     if (isDownloading) foot.textContent = (updatePreviewState.message || (isPatch ? '正在下载快速补丁' : '正在下载完整安装包')) + (updateProgressDetailText() ? ' · ' + updateProgressDetailText() : '');
     else if (isError) foot.textContent = '下载失败：' + (updatePreviewState.errorReason || updatePreviewState.errorDetail || updatePreviewState.message || '请稍后重试') + (updatePreviewState.failedAttempts && updatePreviewState.failedAttempts.length ? ' · 已尝试 ' + updatePreviewState.failedAttempts.length + ' 条线路' : '');
-    else if (isReady && isPatch) foot.textContent = updatePreviewState.restartRequired ? '快速补丁已应用，重启 Mineradio 后生效。' : '快速补丁已应用。';
+    else if (isReady && isPatch) foot.textContent = updatePreviewState.restartRequired ? '快速补丁已应用，重启 XK Radio 后生效。' : '快速补丁已应用。';
     else if (isReady) foot.textContent = updatePreviewState.cached ? '已复用上次校验通过的安装包，不会重复下载。' : '安装包已准备好，点击按钮后再打开安装。';
     else if (updatePreviewState.patchAvailable) foot.textContent = '优先使用轻量补丁，只更新缺失或变更的资源文件；不适用时可下载完整安装包。';
     else foot.textContent = updatePreviewState.updateAvailable ? '没有可用快速补丁时会下载完整安装包。' : '当前版本已是最新。';
@@ -23062,7 +23062,7 @@ async function restartForAppliedPatch() {
       return;
     }
   } catch (e) {}
-  showToast('请手动重启 Mineradio 让补丁生效');
+  showToast('请手动重启 XK Radio 让补丁生效');
 }
 
 async function openDownloadedUpdateInstaller(filePath) {
@@ -24444,7 +24444,7 @@ var visualGuideSteps = [
   {
     target: 'stage',
     kicker: '01 / Welcome',
-    title: 'Mineradio 是用来听歌的视觉播放器',
+    title: 'XK Radio 是用来听歌的视觉播放器',
     body: '它不是单纯歌单页：搜索或导入一首歌后，封面、歌词、粒子和镜头会跟着音乐一起动。'
   },
   {
@@ -26107,7 +26107,7 @@ function markSplashReadyToEnter() {
   s.classList.add('ready');
   s.setAttribute('role', 'button');
   s.setAttribute('tabindex', '0');
-  s.setAttribute('aria-label', '点击进入 Mineradio');
+  s.setAttribute('aria-label', '点击进入 XK Radio');
 }
 
 document.addEventListener('DOMContentLoaded', function(){
@@ -26151,7 +26151,7 @@ function currentDesktopSongMeta() {
   var song = playQueue && currentIdx >= 0 ? playQueue[currentIdx] : null;
   song = song || currentLyricSong && currentLyricSong() || {};
   return {
-    title: song.name || song.title || 'Mineradio',
+    title: song.name || song.title || 'XK Radio',
     artist: song.artist || song.ar || song.author || '',
     cover: (typeof songCoverSrc === 'function' && song) ? (songCoverSrc(song, 360) || song.cover || '') : (song.cover || '')
   };
@@ -26197,7 +26197,7 @@ function currentDesktopLyricSnapshot() {
       progressSpan: 4.8
     };
   }
-  return { text: normalizeDesktopLyricText(currentDesktopSongMeta().title || 'Mineradio'), progress: 0, progressSpan: 4.8 };
+  return { text: normalizeDesktopLyricText(currentDesktopSongMeta().title || 'XK Radio'), progress: 0, progressSpan: 4.8 };
 }
 function desktopOverlayColorValue(value, fallback) {
   var raw = String(value || '').trim();

@@ -29,12 +29,12 @@ const WINDOWED_SCALE = 3 / 4;
 const WINDOWED_MARGIN = 32;
 const MIN_WINDOWED_WIDTH = 960;
 const MIN_WINDOWED_HEIGHT = 540;
-const APP_NAME = 'Mineradio';
-const APP_USER_MODEL_ID = 'com.mineradio.desktop';
+const APP_NAME = 'XK Radio';
+const APP_USER_MODEL_ID = 'com.xk.radio.desktop';
 const APP_ICON_ICO = path.join(__dirname, '..', 'build', 'icon.ico');
-const NETEASE_LOGIN_PARTITION = 'persist:mineradio-netease-login';
+const NETEASE_LOGIN_PARTITION = 'persist:xk-radio-netease-login';
 const NETEASE_LOGIN_URL = 'https://music.163.com/#/login';
-const QQ_LOGIN_PARTITION = 'persist:mineradio-qqmusic-login';
+const QQ_LOGIN_PARTITION = 'persist:xk-radio-qqmusic-login';
 const QQ_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile';
 
 const CHROMIUM_PERFORMANCE_SWITCHES = [
@@ -287,7 +287,7 @@ function ensureDesktopShortcut() {
       target,
       cwd: path.dirname(target),
       args: '',
-      description: 'Mineradio desktop music player',
+      description: 'XK Radio desktop music player',
       icon: fs.existsSync(APP_ICON_ICO) ? APP_ICON_ICO : target,
       iconIndex: 0,
       appUserModelId: APP_USER_MODEL_ID,
@@ -929,7 +929,7 @@ function createDesktopLyricsWindow(payload = {}) {
     focusable: false,
     skipTaskbar: true,
     show: false,
-    title: 'Mineradio Desktop Lyrics',
+    title: 'XK Radio Desktop Lyrics',
     webPreferences: {
       preload: path.join(__dirname, 'overlay-preload.js'),
       contextIsolation: true,
@@ -1058,7 +1058,7 @@ function createWallpaperWindow(payload = {}) {
     focusable: false,
     skipTaskbar: true,
     show: false,
-    title: 'Mineradio Wallpaper',
+    title: 'XK Radio Wallpaper',
     webPreferences: {
       preload: path.join(__dirname, 'overlay-preload.js'),
       contextIsolation: true,
@@ -1128,9 +1128,9 @@ ipcMain.handle('mineradio-hotkeys-configure-global', (_event, bindings) => {
 ipcMain.handle('mineradio-export-json-file', async (event, payload = {}) => {
   try {
     const owner = getSenderWindow(event);
-    const defaultName = String(payload.defaultName || 'mineradio-export.json').replace(/[\\/:*?"<>|]+/g, '-');
+    const defaultName = String(payload.defaultName || 'xk-radio-export.json').replace(/[\\/:*?"<>|]+/g, '-');
     const result = await dialog.showSaveDialog(owner, {
-      title: '导出 Mineradio 存档',
+      title: '导出 XK Radio 存档',
       defaultPath: defaultName.toLowerCase().endsWith('.json') ? defaultName : `${defaultName}.json`,
       filters: [{ name: 'JSON', extensions: ['json'] }],
     });
@@ -1147,7 +1147,7 @@ ipcMain.handle('mineradio-import-json-file', async (event) => {
   try {
     const owner = getSenderWindow(event);
     const result = await dialog.showOpenDialog(owner, {
-      title: '导入 Mineradio 存档',
+      title: '导入 XK Radio 存档',
       properties: ['openFile'],
       filters: [{ name: 'JSON', extensions: ['json'] }],
     });

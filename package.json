@@ -1,9 +1,9 @@
 {
-  "name": "mineradio",
-  "productName": "Mineradio",
+  "name": "xk-radio",
+  "productName": "XK Radio",
   "version": "1.1.1",
   "description": "沉浸式音乐播放器，融合天气电台、歌词舞台、粒子视觉和 3D 歌单架。",
-  "author": "Mineradio",
+  "author": "xk271521-droid",
   "main": "desktop/main.js",
   "private": true,
   "scripts": {
@@ -12,8 +12,8 @@
     "build:win:dir": "electron-builder --win dir"
   },
   "build": {
-    "appId": "com.mineradio.desktop",
-    "productName": "Mineradio",
+    "appId": "com.xk.radio.desktop",
+    "productName": "XK Radio",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -34,7 +34,7 @@
     ],
     "asar": false,
     "win": {
-      "executableName": "Mineradio",
+      "executableName": "XKRadio",
       "icon": "build/icon.ico",
       "signAndEditExecutable": false,
       "target": [
@@ -52,28 +52,28 @@
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Mineradio",
+      "shortcutName": "XK Radio",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/installerSidebar.bmp",
       "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh",
-      "artifactName": "Mineradio-${version}-Setup.${ext}"
+      "artifactName": "XKRadio-${version}-Setup.${ext}"
     },
     "publish": [
       {
         "provider": "github",
-        "owner": "XxHuberrr",
-        "repo": "Mineradio"
+        "owner": "xk271521-droid",
+        "repo": "XK-Radio"
       }
     ]
   },
   "mineradio": {
     "update": {
       "provider": "github",
-      "owner": "XxHuberrr",
-      "repo": "Mineradio",
+      "owner": "xk271521-droid",
+      "repo": "XK-Radio",
       "preview": true,
       "preferMirrors": true,
       "mirrors": [
