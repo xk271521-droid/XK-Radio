@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.5 - 2026-07-10
+
+- Published a test release for verifying update detection from v1.1.4.
+
 ## 1.1.4 - 2026-07-10
 
 - Made the in-app update entry appear sooner and refresh again when the window regains focus.

@@ -10600,8 +10600,8 @@ function updateStageLyrics3D(dt) {
     if (u.uColorMode) u.uColorMode.value = lyricColorStyleIndex();
     if (u.uBeat) u.uBeat.value = active ? beatDrive : beatDrive * 0.45;
     if (u.uBass) u.uBass.value = active ? bassDrive : bassDrive * 0.42;
-    if (u.uScanStrength) u.uScanStrength.value = lyricEffectName === 'typewriter' ? clampRange(0.62 + stageLyrics.highBloom * 0.18 + beatPulse * 0.06, 0, 1) : 0;
-    if (u.uPrismStrength) u.uPrismStrength.value = lyricEffectName === 'magnetic' ? clampRange(0.66 + stageLyrics.beatGlow * 0.16 + bassDrive * 0.08, 0, 1) : 0;
+    if (u.uScanStrength) u.uScanStrength.value = meshEffectName === 'typewriter' ? clampRange(0.62 + stageLyrics.highBloom * 0.18 + beatPulse * 0.06, 0, 1) : 0;
+    if (u.uPrismStrength) u.uPrismStrength.value = meshEffectName === 'magnetic' ? clampRange(0.66 + stageLyrics.beatGlow * 0.16 + bassDrive * 0.08, 0, 1) : 0;
     if (u.uGlitch) u.uGlitch.value = lyricMotion.glitch ? clampRange(entry * (active ? 0.72 : 0.38) + beatPulse * 0.20 + stageLyrics.beatGlow * 0.13, 0, 1) : 0;
   }
   function tickMesh(mesh, isCurrent) {
