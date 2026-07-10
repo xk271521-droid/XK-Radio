@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>XK Radio - 夜航</title>
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="preconnect" href="https://unpkg.com">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: oklch(0.135 0.014 252);
+      --panel: oklch(0.17 0.016 252);
+      --panel-2: oklch(0.205 0.02 252);
+      --line: oklch(0.3 0.019 252);
+      --ink: oklch(0.94 0.008 252);
+      --muted: oklch(0.67 0.02 252);
+      --blue: oklch(0.72 0.155 243);
+      --blue-2: oklch(0.62 0.17 243);
+      --warm: oklch(0.79 0.115 62);
+      --danger: oklch(0.68 0.19 25);
+      --radius: 8px;
+      --sidebar: 232px;
+      font-family: Inter, "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--bg); color: var(--ink); }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+    .app { min-height: 100vh; display: grid; grid-template-columns: var(--sidebar) 1fr; padding-bottom: 100px; }
+    .sidebar { position: fixed; inset: 0 auto 100px 0; width: var(--sidebar); padding: 23px 16px 20px; border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; }
+    .wordmark { display: flex; align-items: center; gap: 10px; padding: 0 8px 25px; font-weight: 700; letter-spacing: 0; }
+    .mark { width: 26px; height: 26px; display: grid; place-items: center; background: var(--blue); color: #07111f; border-radius: 5px; }
+    .mark i { width: 16px; height: 16px; stroke-width: 3; }
+    .wordmark small { color: var(--muted); font-size: 11px; font-weight: 600; margin-left: auto; }
+    .nav { display: grid; gap: 3px; }
+    .nav-label { margin: 22px 8px 8px; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .nav button { width: 100%; min-height: 38px; display: flex; gap: 11px; align-items: center; padding: 0 10px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--muted); text-align: left; cursor: pointer; transition: background .18s ease, color .18s ease, border-color .18s ease; }
+    .nav button i { width: 17px; height: 17px; stroke-width: 1.8; }
+    .nav button:hover { color: var(--ink); background: oklch(0.23 0.018 252); }
+    .nav button.active { color: var(--ink); background: oklch(0.25 0.045 243); border-color: oklch(0.48 0.11 243); }
+    .nav .count { margin-left: auto; color: var(--muted); font-size: 11px; }
+    .collection { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--line); }
+    .collection-item { display: flex; gap: 10px; align-items: center; padding: 9px 8px; color: var(--muted); font-size: 13px; }
+    .collection-art { width: 28px; height: 28px; background: url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=120&q=80') center/cover; border-radius: 4px; }
+
+    main { grid-column: 2; min-width: 0; }
+    .topbar { height: 74px; padding: 16px 34px; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid var(--line); }
+    .history { display: flex; gap: 7px; }
+    .icon-button { width: 34px; height: 34px; display: inline-grid; place-items: center; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; transition: .18s ease; }
+    .icon-button:hover { color: var(--ink); border-color: var(--muted); background: var(--panel-2); }
+    .icon-button i { width: 17px; height: 17px; }
+    .search { flex: 1; max-width: 470px; height: 38px; display: flex; align-items: center; gap: 9px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--muted); }
+    .search:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px oklch(0.72 0.155 243 / .14); }
+    .search i { width: 17px; }
+    .search input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 13px; }
+    .search input::placeholder { color: var(--muted); }
+    .profile { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=96&q=80') center/cover; }
+
+    .content { max-width: 1480px; margin: 0 auto; padding: 34px; }
+    .intro { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 29px; }
+    .intro h1 { max-width: 580px; margin: 0; font-size: 29px; line-height: 1.15; letter-spacing: 0; text-wrap: balance; }
+    .intro p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+    .date { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    .feature { display: grid; grid-template-columns: minmax(300px, 1.25fr) minmax(240px, .75fr); min-height: 290px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .feature-main { position: relative; isolation: isolate; padding: 31px; overflow: hidden; display: flex; flex-direction: column; justify-content: end; }
+    .feature-main::before { content: ""; position: absolute; z-index: -2; inset: 0; background: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85') center 54%/cover; filter: saturate(.68) brightness(.55); }
+    .feature-main::after { content: ""; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, oklch(0.13 0.018 252 / .95), oklch(0.13 0.018 252 / .35)); }
+    .live-tag { align-self: flex-start; margin-bottom: auto; display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 4px; background: oklch(0.7 0.17 25); color: #260a06; font-size: 11px; font-weight: 800; }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .feature-main h2 { max-width: 520px; margin: 0; font-size: 27px; line-height: 1.16; letter-spacing: 0; text-wrap: balance; }
+    .feature-main p { margin: 9px 0 0; color: oklch(0.89 0.008 252); font-size: 14px; }
+    .listen { align-self: flex-start; margin-top: 21px; min-height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; border: 0; border-radius: 5px; background: var(--blue); color: #07101d; font-weight: 750; font-size: 13px; cursor: pointer; transition: transform .18s ease, background .18s ease; }
+    .listen:hover { background: oklch(0.78 0.13 243); transform: translateY(-1px); }
+    .listen i { width: 16px; height: 16px; fill: currentColor; }
+    .feature-list { padding: 23px 25px; display: flex; flex-direction: column; justify-content: space-between; }
+    .feature-list h3, .section-heading h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    .station { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .station:last-child { border-bottom: 0; }
+    .station:hover .station-name { color: var(--blue); }
+    .station-no { color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .station-name { font-size: 13px; font-weight: 650; transition: color .18s ease; }
+    .station-meta, .duration { color: var(--muted); font-size: 11px; }
+
+    .section-heading { display: flex; align-items: center; justify-content: space-between; margin: 35px 0 15px; }
+    .section-heading a { color: var(--muted); text-decoration: none; font-size: 12px; }
+    .section-heading a:hover { color: var(--ink); }
+    .albums { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+    .album { min-width: 0; border: 0; padding: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+    .album-image { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 6px; background: var(--panel-2); }
+    .album img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s cubic-bezier(.16,1,.3,1), filter .25s ease; }
+    .album:hover img { transform: scale(1.045); filter: brightness(.72); }
+    .album-play { position: absolute; right: 10px; bottom: 10px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--blue); color: #07101d; opacity: 0; transform: translateY(6px); transition: opacity .18s ease, transform .18s ease; }
+    .album:hover .album-play { opacity: 1; transform: translateY(0); }
+    .album-play i { width: 17px; fill: currentColor; }
+    .album-title { display: block; margin-top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 650; }
+    .album-artist { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+
+    .bottom-player { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; height: 100px; display: grid; grid-template-columns: minmax(220px, 1fr) minmax(390px, 1.5fr) minmax(220px, 1fr); align-items: center; gap: 25px; padding: 14px 28px; border-top: 1px solid var(--line); background: oklch(0.145 0.015 252 / .96); backdrop-filter: blur(18px); }
+    .playing-song { min-width: 0; display: flex; align-items: center; gap: 12px; }
+    .playing-cover { width: 57px; height: 57px; flex: 0 0 57px; border-radius: 5px; background: url('https://images.unsplash.com/photo-1519608487953-e999c86e7450?auto=format&fit=crop&w=180&q=82') center/cover; }
+    .song-text { min-width: 0; }
+    .song-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 700; }
+    .song-artist { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .heart { margin-left: auto; }
+    .heart.liked { color: var(--warm); border-color: oklch(0.79 0.115 62 / .55); }
+    .heart.liked i { fill: currentColor; }
+    .controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+    .control-row { display: flex; justify-content: center; align-items: center; gap: 10px; grid-column: 2; }
+    .control-row .icon-button { border-color: transparent; background: transparent; width: 31px; height: 31px; }
+    .control-row .icon-button:hover { border-color: var(--line); background: var(--panel-2); }
+    .play { width: 38px !important; height: 38px !important; border: 0 !important; border-radius: 50% !important; background: var(--ink) !important; color: var(--bg) !important; }
+    .play:hover { background: var(--blue) !important; transform: scale(1.04); }
+    .play i { width: 18px; fill: currentColor; }
+    .timeline { grid-column: 1 / -1; display: grid; grid-template-columns: 35px 1fr 35px; align-items: center; gap: 9px; color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    input[type="range"] { width: 100%; height: 3px; accent-color: var(--blue); cursor: pointer; }
+    .utility { display: flex; justify-content: end; align-items: center; gap: 9px; }
+    .utility .icon-button.active { color: var(--blue); border-color: oklch(0.72 0.155 243 / .45); background: oklch(0.72 0.155 243 / .1); }
+    .volume { display: flex; align-items: center; gap: 8px; width: 122px; }
+    .volume i { width: 17px; color: var(--muted); }
+
+    @media (max-width: 980px) {
+      :root { --sidebar: 66px; }
+      .sidebar { padding-inline: 10px; }
+      .wordmark { justify-content: center; padding-inline: 0; }
+      .wordmark span, .wordmark small, .nav button span, .nav .count, .nav-label, .collection-item span { display: none; }
+      .nav button { justify-content: center; padding: 0; }
+      .collection-item { justify-content: center; padding: 9px 0; }
+      .feature { grid-template-columns: 1fr; }
+      .feature-list { display: none; }
+      .albums { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .bottom-player { grid-template-columns: 1fr auto; }
+      .controls { grid-column: 1 / -1; grid-row: 2; }
+      .utility { justify-content: end; }
+    }
+    @media (max-width: 640px) {
+      body { padding-bottom: 154px; }
+      .app { grid-template-columns: 1fr; padding-bottom: 0; }
+      .sidebar { position: fixed; z-index: 20; top: auto; right: 0; bottom: 100px; width: 100%; height: 54px; min-height: 54px; padding: 5px 12px; border-top: 1px solid var(--line); border-right: 0; flex-direction: row; background: oklch(0.145 0.015 252 / .98); }
+      .wordmark, .collection, .nav-label, .nav button:nth-of-type(n+5) { display: none; }
+      .nav { width: 100%; display: flex; justify-content: space-around; gap: 4px; }
+      .nav button { flex: 1; min-height: 42px; }
+      main { grid-column: 1; }
+      .topbar { height: 61px; padding: 12px 16px; }
+      .history, .profile span { display: none; }
+      .search { max-width: none; }
+      .content { padding: 25px 16px; }
+      .intro { align-items: start; margin-bottom: 22px; }
+      .intro h1 { font-size: 24px; }
+      .date { display: none; }
+      .feature-main { min-height: 272px; padding: 23px; }
+      .feature-main h2 { font-size: 23px; }
+      .albums { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+      .bottom-player { height: 100px; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 14px; }
+      .playing-cover { width: 44px; height: 44px; flex-basis: 44px; }
+      .song-artist { display: none; }
+      .heart { display: none; }
+      .utility { display: none; }
+      .controls { grid-column: 2; grid-row: 1; display: block; }
+      .control-row { gap: 4px; }
+      .control-row .icon-button:first-child, .control-row .icon-button:last-child { display: none; }
+      .timeline { position: absolute; right: 14px; bottom: 9px; left: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="wordmark"><span class="mark"><i data-lucide="radio-tower"></i></span><span>XK RADIO</span><small>DESKTOP</small></div>
+      <nav class="nav">
+        <button class="active" data-view="为你推荐"><i data-lucide="sparkles"></i><span>为你推荐</span></button>
+        <button data-view="发现"><i data-lucide="compass"></i><span>发现</span></button>
+        <button data-view="播客"><i data-lucide="mic-2"></i><span>播客</span></button>
+        <button data-view="本地音乐"><i data-lucide="folder-music"></i><span>本地音乐</span><span class="count">128</span></button>
+        <p class="nav-label">我的音乐</p>
+        <button data-view="喜欢的音乐"><i data-lucide="heart"></i><span>喜欢的音乐</span><span class="count">42</span></button>
+        <button data-view="最近播放"><i data-lucide="history"></i><span>最近播放</span></button>
+      </nav>
+      <div class="collection"><div class="collection-item"><span class="collection-art"></span><span>深夜低速公路</span></div></div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div class="history"><button class="icon-button" title="后退"><i data-lucide="chevron-left"></i></button><button class="icon-button" title="前进"><i data-lucide="chevron-right"></i></button></div>
+        <label class="search"><i data-lucide="search"></i><input type="search" placeholder="搜索音乐、歌手或播客" aria-label="搜索音乐"></label>
+        <div class="profile"><span>晚上好，XK</span><span class="avatar"></span></div>
+      </header>
+      <div class="content">
+        <section class="intro"><div><h1 id="page-title">为此刻的你，挑了些新声音</h1><p>不急着定义风格，先听一首。</p></div><time class="date">2026.07.10 / FRI</time></section>
+        <section class="feature" aria-label="精选电台">
+          <div class="feature-main"><span class="live-tag"><span class="live-dot"></span>ON AIR</span><h2>夜航电台：留给城市的最后一小时</h2><p>今晚 23:00 起，慢速电子与旧唱片采样。</p><button class="listen js-play"><i data-lucide="play"></i>立即收听</button></div>
+          <div class="feature-list"><h3>正在直播</h3><div><div class="station"><span class="station-no">01</span><span><span class="station-name">夜航信号</span><span class="station-meta"> · Ambient / 68 BPM</span></span><span class="duration">LIVE</span></div><div class="station"><span class="station-no">02</span><span><span class="station-name">窗外有雨</span><span class="station-meta"> · Indie / 92 BPM</span></span><span class="duration">46:10</span></div><div class="station"><span class="station-no">03</span><span><span class="station-name">Low Key FM</span><span class="station-meta"> · R&B / 78 BPM</span></span><span class="duration">31:28</span></div></div></div>
+        </section>
+        <section><div class="section-heading"><h2>继续播放</h2><a href="#albums">查看全部</a></div><div class="albums" id="albums">
+          <button class="album" data-song="Glass Lake" data-artist="Mina Okabe"><span class="album-image"><img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=460&q=82" alt="Glass Lake 专辑封面"><span class="album-play"><i data-lucide="play"></i></span></span><span class="album-title">Glass Lake</span><span class="album-artist">Mina Okabe</span></button>
+          <button class="album" data-song="梦的边界" data-artist="陈粒"><span class="album-image"><img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=460&q=82" alt="梦的边界 专辑封面"><span class="album-play"><i data-lucide="play"></i></span></span><span class="album-title">梦的边界</span><span class="album-artist">陈粒</span></button>
+          <button class="album" data-song="Two Star & The Dream Police" data-artist="Mk.gee"><span class="album-image"><img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=460&q=82" alt="Two Star 专辑封面"><span class="album-play"><i data-lucide="play"></i></span></span><span class="album-title">Two Star &amp; The Dream Police</span><span class="album-artist">Mk.gee</span></button>
+          <button class="album" data-song="当我们谈论时间" data-artist="声音玩具"><span class="album-image"><img src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=460&q=82" alt="当我们谈论时间 专辑封面"><span class="album-play"><i data-lucide="play"></i></span></span><span class="album-title">当我们谈论时间</span><span class="album-artist">声音玩具</span></button>
+          <button class="album" data-song="Half Asleep" data-artist="Yussef Dayes"><span class="album-image"><img src="https://images.unsplash.com/photo-1464375117522-1311d6a5b81f?auto=format&fit=crop&w=460&q=82" alt="Half Asleep 专辑封面"><span class="album-play"><i data-lucide="play"></i></span></span><span class="album-title">Half Asleep</span><span class="album-artist">Yussef Dayes</span></button>
+        </div></section>
+      </div>
+    </main>
+  </div>
+  <footer class="bottom-player" aria-label="播放器">
+    <div class="playing-song"><div class="playing-cover" aria-hidden="true"></div><div class="song-text"><div class="song-title" id="song-title">After the Rain</div><div class="song-artist" id="song-artist">Hannah Cohen</div></div><button class="icon-button heart" id="like" title="收藏"><i data-lucide="heart"></i></button></div>
+    <div class="controls"><div class="control-row"><button class="icon-button" title="上一首"><i data-lucide="skip-back"></i></button><button class="icon-button play js-play" title="播放" aria-label="播放"><i data-lucide="play"></i></button><button class="icon-button" title="下一首"><i data-lucide="skip-forward"></i></button></div><label class="timeline"><span id="elapsed">01:42</span><input id="progress" type="range" min="0" max="224" value="102" aria-label="播放进度"><span>03:44</span></label></div>
+    <div class="utility"><button class="icon-button active" id="queue" title="播放队列"><i data-lucide="list-music"></i></button><button class="icon-button" title="播放模式"><i data-lucide="repeat-2"></i></button><label class="volume"><i data-lucide="volume-2"></i><input type="range" min="0" max="100" value="68" aria-label="音量"></label></div>
+  </footer>
+  <script>
+    lucide.createIcons();
+    const playButtons = document.querySelectorAll('.js-play');
+    let isPlaying = false;
+    function renderPlayback() {
+      playButtons.forEach(button => {
+        const label = button.classList.contains('listen') ? '立即收听' : '';
+        button.innerHTML = `<i data-lucide="${isPlaying ? 'pause' : 'play'}"></i>${label}`;
+      });
+      lucide.createIcons();
+      document.querySelector('.play').title = isPlaying ? '暂停' : '播放';
+    }
+    playButtons.forEach(button => button.addEventListener('click', () => { isPlaying = !isPlaying; renderPlayback(); }));
+    document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click', () => { document.querySelector('.nav .active').classList.remove('active'); button.classList.add('active'); document.getElementById('page-title').textContent = button.dataset.view; }));
+    document.querySelectorAll('.album').forEach(album => album.addEventListener('click', () => { document.getElementById('song-title').textContent = album.dataset.song; document.getElementById('song-artist').textContent = album.dataset.artist; isPlaying = true; renderPlayback(); }));
+    document.getElementById('like').addEventListener('click', event => event.currentTarget.classList.toggle('liked'));
+    document.getElementById('progress').addEventListener('input', event => { const seconds = Number(event.target.value); document.getElementById('elapsed').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; });
+  </script>
+</body>
+</html>

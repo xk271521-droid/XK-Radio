@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="XK crystal wave logo concept">
+  <defs>
+    <linearGradient id="bg" x1="60" y1="42" x2="448" y2="466" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.46" stop-color="#050914"/>
+      <stop offset="1" stop-color="#01040a"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="76" y1="64" x2="438" y2="444" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f5fbff"/>
+      <stop offset="0.20" stop-color="#62ecff"/>
+      <stop offset="0.58" stop-color="#2368ff"/>
+      <stop offset="1" stop-color="#0fe3ff"/>
+    </linearGradient>
+    <linearGradient id="crystal" x1="158" y1="120" x2="350" y2="388" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dffaff" stop-opacity="0.92"/>
+      <stop offset="0.18" stop-color="#54e8ff" stop-opacity="0.78"/>
+      <stop offset="0.54" stop-color="#0f4dff" stop-opacity="0.52"/>
+      <stop offset="1" stop-color="#061227" stop-opacity="0.92"/>
+    </linearGradient>
+    <linearGradient id="letters" x1="136" y1="150" x2="374" y2="362" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.28" stop-color="#baf8ff"/>
+      <stop offset="0.64" stop-color="#2192ff"/>
+      <stop offset="1" stop-color="#f6fbff"/>
+    </linearGradient>
+    <radialGradient id="coreGlow" cx="50%" cy="46%" r="52%">
+      <stop offset="0" stop-color="#00e5ff" stop-opacity="0.66"/>
+      <stop offset="0.44" stop-color="#2463ff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.02 0 0 0 0 0.68 0 0 0 0 1 0 0 0 0.9 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="shellClip">
+      <rect x="34" y="34" width="444" height="444" rx="54"/>
+    </clipPath>
+  </defs>
+
+  <rect x="20" y="20" width="472" height="472" rx="66" fill="#02050b"/>
+  <rect x="34" y="34" width="444" height="444" rx="54" fill="url(#bg)"/>
+  <g clip-path="url(#shellClip)" opacity="0.42">
+    <path d="M-18 120H530M-18 256H530M-18 392H530" stroke="#76f4ff" stroke-width="1.1" opacity="0.13"/>
+    <path d="M96 -20 476 360M36 20 438 422M-6 68 366 440" stroke="#ffffff" stroke-width="1" opacity="0.07"/>
+    <path d="M52 106h408M86 426h342" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.12"/>
+  </g>
+  <rect x="49" y="49" width="414" height="414" rx="42" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <rect x="67" y="67" width="378" height="378" rx="30" fill="url(#coreGlow)" opacity="0.74"/>
+
+  <g filter="url(#glow)">
+    <path d="M256 94 355 148 382 257 316 392H196l-66-135 27-109Z" fill="#07101c" stroke="#59ecff" stroke-width="4.5" opacity="0.98"/>
+    <path d="M256 94 314 250 256 392 196 250Z" fill="url(#crystal)" opacity="0.82"/>
+    <path d="M157 148 196 250 130 257M355 148 314 250l68 7M196 250h118M256 94v298" fill="none" stroke="#eafcff" stroke-width="2.4" stroke-linecap="round" opacity="0.30"/>
+  </g>
+
+  <path d="M101 274c40-55 85-79 135-71 42 7 55 46 94 48 31 1 57-17 82-48" fill="none" stroke="#7df5ff" stroke-width="7" stroke-linecap="round" opacity="0.62" filter="url(#glow)"/>
+  <path d="M118 314c42-39 81-53 119-42 32 9 52 39 88 36 26-3 50-18 72-44" fill="none" stroke="#2463ff" stroke-width="5" stroke-linecap="round" opacity="0.60"/>
+
+  <g filter="url(#glow)" transform="translate(18 2) scale(0.90)">
+    <path d="M138 162h45l47 69 48-69h43l-68 99 74 109h-47l-51-76-52 76h-46l75-109-68-99Z" fill="url(#letters)"/>
+    <path d="M330 162h40v82l73-82h50l-81 88 86 120h-49l-63-90-16 17v73h-40V162Z" fill="url(#letters)" opacity="0.98"/>
+  </g>
+
+  <path d="M96 92h320" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.16"/>
+  <path d="M112 420h288" stroke="#0fe3ff" stroke-width="2" stroke-linecap="round" opacity="0.16"/>
+</svg>

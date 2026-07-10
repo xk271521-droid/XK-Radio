@@ -1,7 +1,11 @@
 const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog } = require('electron');
 const net = require('net');
+const http = require('http');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const QRCode = require('qrcode');
 const { execFile, spawn } = require('child_process');
 
 let mainWindow = null;
@@ -36,6 +40,16 @@ const NETEASE_LOGIN_PARTITION = 'persist:xk-radio-netease-login';
 const NETEASE_LOGIN_URL = 'https://music.163.com/#/login';
 const QQ_LOGIN_PARTITION = 'persist:xk-radio-qqmusic-login';
 const QQ_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile';
+const KUGOU_LOGIN_PARTITION = 'persist:xk-radio-kugou-login';
+const KUGOU_LOGIN_URL = 'https://www.kugou.com/';
+const KUGOU_LOGIN_QR_KEY_URL = 'https://login-user.kugou.com/v2/qrcode';
+const KUGOU_LOGIN_QR_CHECK_URL = 'https://login-user.kugou.com/v2/get_userinfo_qrcode';
+const SODA_LOGIN_PARTITION = 'persist:xk-radio-soda-login';
+const SODA_LOGIN_URL = 'https://qishui.douyin.com/';
+const KUGOU_WEB_SIGN_SALT = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt';
+const KUGOU_APPID = 1005;
+const KUGOU_SRC_APPID = 2919;
+const KUGOU_CLIENTVER = 20489;
 
 const CHROMIUM_PERFORMANCE_SWITCHES = [
   ['autoplay-policy', 'no-user-gesture-required'],
@@ -88,6 +102,37 @@ const NETEASE_LOGIN_COOKIE_PRIORITY = [
   'WEVNSM',
   'WNMCID',
   'JSESSIONID-WYYY',
+];
+const KUGOU_LOGIN_COOKIE_PRIORITY = [
+  'KuGoo',
+  'KugooID',
+  'UserID',
+  'userid',
+  'token',
+  'Token',
+  'kg_token',
+  'kg_mid',
+  'mid',
+  'dfid',
+  'NickName',
+  'Pic',
+];
+const SODA_LOGIN_COOKIE_PRIORITY = [
+  'sessionid',
+  'sessionid_ss',
+  'sid_guard',
+  'sid_tt',
+  'sid_ucp_v1',
+  'uid_tt',
+  'uid_tt_ss',
+  'passport_csrf_token',
+  'passport_csrf_token_default',
+  'n_mh',
+  'odin_tt',
+  'msToken',
+  'ttwid',
+  's_v_web_id',
+  'LOGIN_STATUS',
 ];
 
 function findOpenPort(startPort) {
@@ -323,6 +368,167 @@ function parseCookieHeader(cookieText) {
   return out;
 }
 
+function decodeCookieValue(value) {
+  let text = String(value || '').trim();
+  text = text.replace(/%u([0-9a-f]{4})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  for (let i = 0; i < 2; i++) {
+    try {
+      const decoded = decodeURIComponent(text.replace(/\+/g, '%20')).trim();
+      if (!decoded || decoded === text) break;
+      text = decoded;
+    } catch (e) {
+      break;
+    }
+  }
+  return text;
+}
+
+function expandCookieObject(obj) {
+  const out = { ...(obj || {}) };
+  Object.keys(obj || {}).forEach((key) => {
+    const decoded = decodeCookieValue(obj[key]);
+    if (!decoded || decoded.indexOf('=') < 0) return;
+    decoded.split(/[&|]/).forEach((part) => {
+      const idx = part.indexOf('=');
+      if (idx <= 0) return;
+      const nestedKey = part.slice(0, idx).trim();
+      const nestedValue = part.slice(idx + 1).trim();
+      if (nestedKey && !out[nestedKey]) out[nestedKey] = nestedValue;
+    });
+  });
+  return out;
+}
+
+function serializeCookieObject(obj) {
+  return Object.keys(obj || {})
+    .filter((key) => key && obj[key] != null && String(obj[key]) !== '')
+    .map((key) => `${key}=${obj[key]}`)
+    .join('; ');
+}
+
+function randomUpperString(len) {
+  const chars = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let out = '';
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+function md5Hex(input) {
+  return crypto.createHash('md5').update(String(input || '')).digest('hex');
+}
+
+function requestText(targetUrl, opts, body) {
+  opts = opts || {};
+  return new Promise((resolve, reject) => {
+    const u = new URL(targetUrl);
+    const lib = u.protocol === 'https:' ? https : http;
+    const req = lib.request(u, {
+      method: opts.method || 'GET',
+      headers: opts.headers || {},
+    }, response => {
+      const chunks = [];
+      response.on('data', chunk => chunks.push(chunk));
+      response.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        if (response.statusCode >= 400) {
+          const err = new Error('HTTP ' + response.statusCode);
+          err.statusCode = response.statusCode;
+          err.body = text;
+          reject(err);
+          return;
+        }
+        resolve(text);
+      });
+    });
+    req.setTimeout(15000, () => req.destroy(new Error('Request timeout')));
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+async function requestJSON(targetUrl, opts, body) {
+  const text = await requestText(targetUrl, opts, body);
+  return JSON.parse(String(text || '').trim());
+}
+
+function kugouWebSignature(params) {
+  const parts = Object.keys(params || {}).sort().map(key => `${key}=${params[key]}`);
+  return md5Hex([KUGOU_WEB_SIGN_SALT, ...parts, KUGOU_WEB_SIGN_SALT].join(''));
+}
+
+async function kugouSignedWebGet(targetUrl, params) {
+  const device = {
+    dfid: '-',
+    mid: '-',
+    uuid: '-',
+    appid: KUGOU_APPID,
+    clientver: KUGOU_CLIENTVER,
+    clienttime: Math.floor(Date.now() / 1000),
+    ...(params || {}),
+  };
+  device.signature = kugouWebSignature(device);
+  const u = new URL(targetUrl);
+  Object.keys(device).forEach(key => {
+    if (device[key] != null && device[key] !== '') u.searchParams.set(key, String(device[key]));
+  });
+  return requestJSON(u.toString(), {
+    headers: {
+      Referer: 'https://www.kugou.com/',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134 Safari/537.36',
+    },
+  });
+}
+
+async function createKugouApiQrLogin() {
+  const body = await kugouSignedWebGet(KUGOU_LOGIN_QR_KEY_URL, {
+    appid: 1001,
+    type: 1,
+    plat: 4,
+    qrcode_txt: `https://h5.kugou.com/apps/loginQRCode/html/index.html?appid=${KUGOU_APPID}&`,
+    srcappid: KUGOU_SRC_APPID,
+  });
+  const data = body && body.data || {};
+  const key = data.qrcode || data.key || data.qrcode_key || '';
+  if (!key) throw new Error('KUGOU_QR_KEY_EMPTY');
+  const url = `https://h5.kugou.com/apps/loginQRCode/html/index.html?qrcode=${encodeURIComponent(key)}`;
+  const image = data.qrcode_img || await QRCode.toDataURL(url);
+  return { key, url, image };
+}
+
+async function checkKugouApiQrLogin(key) {
+  return kugouSignedWebGet(KUGOU_LOGIN_QR_CHECK_URL, {
+    plat: 4,
+    srcappid: KUGOU_SRC_APPID,
+    qrcode: key,
+  });
+}
+
+function buildKugouApiCookie(loginData) {
+  const data = loginData || {};
+  const userId = String(data.userid || data.userId || data.uid || '').replace(/[^\w-]/g, '');
+  const token = data.token || data.t || data.Token || '';
+  if (!userId || !token) return '';
+  const mid = crypto.randomBytes(16).toString('hex');
+  const dfid = randomUpperString(24);
+  return serializeCookieObject({
+    userid: userId,
+    UserID: userId,
+    KugooID: userId,
+    token,
+    t: token,
+    vip_type: data.vip_type || data.vipType || 0,
+    vip_token: data.vip_token || data.vipToken || '',
+    NickName: data.nickname || data.nick || data.username || '',
+    Pic: data.pic || data.avatar || data.headimg || '',
+    dfid,
+    kg_dfid: dfid,
+    mid,
+    kg_mid: mid,
+    KUGOU_API_MID: mid,
+  });
+}
+
 function qqCookieHasLogin(cookieText) {
   const obj = parseCookieHeader(cookieText);
   const rawUin = Number(obj.login_type) === 2
@@ -349,6 +555,18 @@ function neteaseCookieHasLogin(cookieText) {
   return !!obj.MUSIC_U;
 }
 
+function kugouCookieHasLogin(cookieText) {
+  const obj = expandCookieObject(parseCookieHeader(cookieText));
+  const userId = obj.UserID || obj.userid || obj.KugooID || obj.uid || '';
+  const token = obj.token || obj.t || obj.Token || obj.kg_token || obj.KuGoo || obj.KG_TOKEN || '';
+  return !!(userId && token);
+}
+
+function sodaCookieHasLogin(cookieText) {
+  const obj = parseCookieHeader(cookieText);
+  return !!(obj.sessionid || obj.sessionid_ss || obj.sid_guard || obj.sid_tt || obj.sid_ucp_v1 || obj.uid_tt || obj.uid_tt_ss || obj.n_mh);
+}
+
 function isQQCookieDomain(domain) {
   const normalized = String(domain || '').replace(/^\./, '').toLowerCase();
   return normalized === 'qq.com' || normalized.endsWith('.qq.com') || normalized.endsWith('qqmusic.qq.com');
@@ -359,6 +577,20 @@ function isNeteaseCookieDomain(domain) {
   return normalized === '163.com' || normalized.endsWith('.163.com') ||
     normalized === 'music.163.com' || normalized.endsWith('.music.163.com') ||
     normalized === 'netease.com' || normalized.endsWith('.netease.com');
+}
+
+function isKugouCookieDomain(domain) {
+  const normalized = String(domain || '').replace(/^\./, '').toLowerCase();
+  return normalized === 'kugou.com' || normalized.endsWith('.kugou.com') ||
+    normalized === 'kgimg.com' || normalized.endsWith('.kgimg.com');
+}
+
+function isSodaCookieDomain(domain) {
+  const normalized = String(domain || '').replace(/^\./, '').toLowerCase();
+  return normalized === 'qishui.com' || normalized.endsWith('.qishui.com') ||
+    normalized === 'douyin.com' || normalized.endsWith('.douyin.com') ||
+    normalized === 'douyinmusic.com' || normalized.endsWith('.douyinmusic.com') ||
+    normalized === 'snssdk.com' || normalized.endsWith('.snssdk.com');
 }
 
 function buildCookieHeaderFor(cookies, isAllowedDomain, priority) {
@@ -395,6 +627,16 @@ async function readQQLoginCookieHeader(cookieSession) {
 async function readNeteaseLoginCookieHeader(cookieSession) {
   const cookies = await cookieSession.cookies.get({});
   return buildCookieHeaderFor(cookies, isNeteaseCookieDomain, NETEASE_LOGIN_COOKIE_PRIORITY);
+}
+
+async function readKugouLoginCookieHeader(cookieSession) {
+  const cookies = await cookieSession.cookies.get({});
+  return buildCookieHeaderFor(cookies, isKugouCookieDomain, KUGOU_LOGIN_COOKIE_PRIORITY);
+}
+
+async function readSodaLoginCookieHeader(cookieSession) {
+  const cookies = await cookieSession.cookies.get({});
+  return buildCookieHeaderFor(cookies, isSodaCookieDomain, SODA_LOGIN_COOKIE_PRIORITY);
 }
 
 async function openNeteaseMusicLoginWindow(owner) {
@@ -600,6 +842,220 @@ async function openQQMusicLoginWindow(owner) {
   });
 }
 
+async function openSodaMusicLoginWindow(owner) {
+  const cookieSession = session.fromPartition(SODA_LOGIN_PARTITION);
+  const initialCookie = await readSodaLoginCookieHeader(cookieSession);
+  if (sodaCookieHasLogin(initialCookie)) return { ok: true, cookie: initialCookie, reused: true };
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let pollTimer = null;
+
+    const loginWindow = new BrowserWindow({
+      width: 940,
+      height: 760,
+      minWidth: 760,
+      minHeight: 560,
+      parent: owner && !owner.isDestroyed() ? owner : undefined,
+      modal: false,
+      show: false,
+      autoHideMenuBar: true,
+      title: '汽水音乐登录',
+      backgroundColor: '#111111',
+      icon: APP_ICON_ICO,
+      webPreferences: {
+        partition: SODA_LOGIN_PARTITION,
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+      },
+    });
+
+    const finish = async (result) => {
+      if (settled) return;
+      settled = true;
+      if (pollTimer) clearInterval(pollTimer);
+      if (loginWindow && !loginWindow.isDestroyed()) loginWindow.close();
+      resolve(result);
+    };
+
+    const checkCookies = async () => {
+      try {
+        const cookie = await readSodaLoginCookieHeader(cookieSession);
+        if (sodaCookieHasLogin(cookie)) finish({ ok: true, cookie });
+      } catch (e) {
+        console.warn('Soda login cookie check failed:', e.message);
+      }
+    };
+
+    loginWindow.webContents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:\/\/([^/]+\.)?(qishui|douyin|snssdk|douyinmusic)\.com/i.test(url)) {
+        loginWindow.loadURL(url).catch((e) => console.warn('Soda login popup navigation failed:', e.message));
+      } else if (/^https?:\/\//i.test(url)) {
+        shell.openExternal(url).catch(() => {});
+      }
+      return { action: 'deny' };
+    });
+
+    loginWindow.webContents.on('did-finish-load', () => {
+      checkCookies();
+      loginWindow.webContents.executeJavaScript(`
+        setTimeout(() => {
+          const nodes = Array.from(document.querySelectorAll('a, button, span, div'));
+          const loginNode = nodes.find((node) => {
+            const text = (node.textContent || '').trim();
+            if (!/登录|登陆|立即登录|扫码/.test(text)) return false;
+            const rect = node.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+          });
+          if (loginNode) loginNode.click();
+        }, 700);
+      `, true).catch(() => {});
+    });
+
+    loginWindow.on('ready-to-show', () => loginWindow.show());
+    loginWindow.on('closed', async () => {
+      if (settled) return;
+      if (pollTimer) clearInterval(pollTimer);
+      try {
+        const cookie = await readSodaLoginCookieHeader(cookieSession);
+        resolve(sodaCookieHasLogin(cookie)
+          ? { ok: true, cookie }
+          : { ok: false, cancelled: true, message: '汽水音乐登录窗口已关闭' });
+      } catch (e) {
+        resolve({ ok: false, error: e.message || '汽水音乐登录窗口已关闭' });
+      }
+    });
+
+    pollTimer = setInterval(checkCookies, 1200);
+    loginWindow.loadURL(SODA_LOGIN_URL).catch((e) => finish({ ok: false, error: e.message }));
+  });
+}
+
+async function openKugouMusicLoginWindow(owner) {
+  return new Promise((resolve) => {
+    let settled = false;
+    let pollTimer = null;
+    let qrKey = '';
+
+    const loginWindow = new BrowserWindow({
+      width: 460,
+      height: 560,
+      minWidth: 420,
+      minHeight: 520,
+      parent: owner && !owner.isDestroyed() ? owner : undefined,
+      modal: false,
+      show: false,
+      autoHideMenuBar: true,
+      title: 'Kugou Music Login QR',
+      backgroundColor: '#111111',
+      icon: APP_ICON_ICO,
+      webPreferences: {
+        partition: KUGOU_LOGIN_PARTITION,
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+      },
+    });
+
+    const finish = async (result) => {
+      if (settled) return;
+      settled = true;
+      if (pollTimer) clearInterval(pollTimer);
+      if (loginWindow && !loginWindow.isDestroyed()) {
+        loginWindow.close();
+      }
+      resolve(result);
+    };
+
+    const setStatus = (text, kind) => {
+      if (!loginWindow || loginWindow.isDestroyed()) return;
+      loginWindow.webContents.executeJavaScript(`
+        (() => {
+          const el = document.getElementById('status');
+          if (!el) return;
+          el.textContent = ${JSON.stringify(text)};
+          el.className = ${JSON.stringify(kind || '')};
+        })();
+      `, true).catch(() => {});
+    };
+
+    const checkQr = async () => {
+      try {
+        if (!qrKey) return;
+        const body = await checkKugouApiQrLogin(qrKey);
+        const data = body && body.data || {};
+        const status = Number(data.status || body.status || 0);
+        if (status === 1) {
+          setStatus('请使用酷狗音乐 App 扫码登录', 'waiting');
+        } else if (status === 2 || status === 3) {
+          setStatus('已扫码，请在手机上确认登录', 'confirm');
+        } else if (status === 4) {
+          const cookie = buildKugouApiCookie(data);
+          if (!cookie) throw new Error('酷狗授权成功但没有返回播放 token');
+          finish({ ok: true, cookie, mobile: true });
+        } else if (status === 0) {
+          finish({ ok: false, expired: true, message: '酷狗登录二维码已过期，请重新打开登录' });
+        }
+      } catch (e) {
+        console.warn('Kugou QR login check failed:', e.message);
+        setStatus('登录状态检查失败，稍后会继续重试', 'fail');
+      }
+    };
+
+    loginWindow.webContents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:\/\//i.test(url)) {
+        shell.openExternal(url).catch(() => {});
+      }
+      return { action: 'deny' };
+    });
+
+    loginWindow.on('ready-to-show', () => loginWindow.show());
+    loginWindow.on('closed', async () => {
+      if (settled) return;
+      if (pollTimer) clearInterval(pollTimer);
+      resolve({ ok: false, cancelled: true, message: 'Kugou login window closed' });
+    });
+
+    createKugouApiQrLogin().then((qr) => {
+      qrKey = qr.key;
+      const html = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111;color:#fff;font-family:"Microsoft YaHei",Arial,sans-serif}
+.wrap{width:100%;padding:34px 30px;text-align:center}
+h1{margin:0 0 10px;font-size:22px;font-weight:700;letter-spacing:0}
+p{margin:0;color:rgba(255,255,255,.62);font-size:13px;line-height:1.7}
+.qr{width:260px;height:260px;margin:26px auto 18px;padding:12px;background:#fff;border-radius:8px}
+.qr img{width:100%;height:100%;display:block}
+#status{min-height:24px;margin-top:12px;color:#d6e8ff;font-size:14px}
+#status.confirm{color:#f4d28a}#status.fail{color:#ff9a9a}
+.hint{margin-top:24px;font-size:12px;color:rgba(255,255,255,.42)}
+button{margin-top:18px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:6px;padding:8px 14px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>酷狗音乐登录</h1>
+  <p>打开手机酷狗音乐 App，扫码并确认登录</p>
+  <div class="qr"><img src="${qr.image}" alt="Kugou login QR"></div>
+  <div id="status" class="waiting">请使用酷狗音乐 App 扫码登录</div>
+  <div class="hint">登录后会保存播放授权，用于读取你的歌单和会员歌曲播放地址。</div>
+  <button onclick="window.close()">取消</button>
+</div>
+</body>
+</html>`;
+      loginWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html)).catch((e) => finish({ ok: false, error: e.message }));
+      pollTimer = setInterval(checkQr, 1600);
+      setTimeout(checkQr, 600);
+    }).catch((e) => {
+      finish({ ok: false, error: e.message || '酷狗二维码创建失败' });
+    });
+  });
+}
+
 async function clearQQMusicLoginSession() {
   const cookieSession = session.fromPartition(QQ_LOGIN_PARTITION);
   await cookieSession.clearStorageData({
@@ -610,6 +1066,14 @@ async function clearQQMusicLoginSession() {
 
 async function clearNeteaseMusicLoginSession() {
   const cookieSession = session.fromPartition(NETEASE_LOGIN_PARTITION);
+  await cookieSession.clearStorageData({
+    storages: ['cookies', 'localstorage', 'indexdb', 'cachestorage'],
+  });
+  return { ok: true };
+}
+
+async function clearKugouMusicLoginSession() {
+  const cookieSession = session.fromPartition(KUGOU_LOGIN_PARTITION);
   await cookieSession.clearStorageData({
     storages: ['cookies', 'localstorage', 'indexdb', 'cachestorage'],
   });
@@ -1176,6 +1640,27 @@ ipcMain.handle('qq-music-clear-login', async () => {
   return clearQQMusicLoginSession();
 });
 
+ipcMain.handle('kugou-music-open-login', async (event) => {
+  return openKugouMusicLoginWindow(getSenderWindow(event));
+});
+
+ipcMain.handle('kugou-music-clear-login', async () => {
+  return clearKugouMusicLoginSession();
+});
+
+ipcMain.handle('soda-music-open-login', async (event) => {
+  return openSodaMusicLoginWindow(getSenderWindow(event));
+});
+
+ipcMain.handle('soda-music-clear-login', async () => {
+  try {
+    await session.fromPartition(SODA_LOGIN_PARTITION).clearStorageData({ storages: ['cookies'] });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 ipcMain.handle('mineradio-open-update-installer', async (_event, filePath) => {
   try {
     const target = path.resolve(String(filePath || ''));
@@ -1327,6 +1812,7 @@ async function createWindow() {
   process.env.PORT = String(port);
   process.env.COOKIE_FILE = path.join(app.getPath('userData'), '.cookie');
   process.env.QQ_COOKIE_FILE = path.join(app.getPath('userData'), '.qq-cookie');
+  process.env.KUGOU_COOKIE_FILE = path.join(app.getPath('userData'), '.kugou-cookie');
   process.env.MINERADIO_UPDATE_DIR = getUpdateDownloadDir();
   try {
     const legacyQQCookie = path.join(__dirname, '..', '.qq-cookie');

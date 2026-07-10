@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="XK radio core logo concept">
+  <defs>
+    <linearGradient id="base" x1="54" y1="42" x2="458" y2="468" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08111d"/>
+      <stop offset="0.44" stop-color="#050812"/>
+      <stop offset="1" stop-color="#010308"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="92" y1="72" x2="420" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f5fcff"/>
+      <stop offset="0.22" stop-color="#68f0ff"/>
+      <stop offset="0.56" stop-color="#1e60ff"/>
+      <stop offset="1" stop-color="#00d8ff"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="146" y1="142" x2="370" y2="368" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.24" stop-color="#9df7ff"/>
+      <stop offset="0.62" stop-color="#207dff"/>
+      <stop offset="1" stop-color="#f5fbff"/>
+    </linearGradient>
+    <radialGradient id="inner" cx="50%" cy="49%" r="52%">
+      <stop offset="0" stop-color="#00e5ff" stop-opacity="0.64"/>
+      <stop offset="0.42" stop-color="#2363ff" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="11" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.02 0 0 0 0 0.70 0 0 0 0 1 0 0 0 0.92 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="22" y="22" width="468" height="468" rx="54" fill="#02050b"/>
+  <rect x="38" y="38" width="436" height="436" rx="40" fill="url(#base)"/>
+  <rect x="55" y="55" width="402" height="402" rx="28" fill="none" stroke="url(#ring)" stroke-width="5.5"/>
+  <path d="M96 104h320M96 408h320" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.13"/>
+  <circle cx="256" cy="256" r="176" fill="url(#inner)" opacity="0.88"/>
+
+  <g filter="url(#soft)">
+    <path d="M256 126c71 0 130 58 130 130 0 71-59 130-130 130s-130-59-130-130c0-72 59-130 130-130Z" fill="#07101c" stroke="url(#ring)" stroke-width="5"/>
+    <path d="M175 257c24-44 52-67 81-67s57 23 81 67" fill="none" stroke="#86f8ff" stroke-width="8" stroke-linecap="round" opacity="0.76"/>
+    <path d="M202 300c15-25 33-38 54-38s39 13 54 38" fill="none" stroke="#2563ff" stroke-width="6" stroke-linecap="round" opacity="0.82"/>
+    <path d="M256 166 330 346H288l-17-45h-32l-17 45h-42Z" fill="url(#mark)"/>
+    <path d="M255 166 334 346h-44l-35-82-35 82h-44Z" fill="url(#mark)" opacity="0.22"/>
+    <path d="M235 248h42l-21-55Z" fill="#06101c" opacity="0.72"/>
+    <circle cx="256" cy="314" r="12" fill="#f4feff"/>
+  </g>
+
+  <path d="M105 252c19-78 77-138 151-138s132 60 151 138" fill="none" stroke="#73f3ff" stroke-width="4" stroke-linecap="round" opacity="0.28"/>
+  <path d="M119 290c33 64 82 96 137 96s104-32 137-96" fill="none" stroke="#2363ff" stroke-width="4" stroke-linecap="round" opacity="0.22"/>
+</svg>

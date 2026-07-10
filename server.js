@@ -5,6 +5,14 @@
 //  - 试听检测 (freeTrialInfo) + 全 quality 探测
 //  - 所有受保护 API 都会带上已登录用户的 cookie
 // ====================================================================
+const fs = require('fs');
+const path = require('path');
+const anonymousTokenPath = path.join(require('os').tmpdir(), 'anonymous_token');
+
+if (!fs.existsSync(anonymousTokenPath)) {
+  fs.writeFileSync(anonymousTokenPath, '', 'utf8');
+}
+
 const {
   search,
   cloudsearch,
@@ -46,11 +54,10 @@ const {
 } = require('NeteaseCloudMusicApi');
 const http = require('http');
 const https = require('https');
-const fs   = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 const tls = require('tls');
 const { once } = require('events');
+const { spawn } = require('child_process');
 const { fileURLToPath } = require('url');
 const { analyzePodcastDjStream, analyzePodcastDjIntro } = require('./dj-analyzer');
 
@@ -59,6 +66,8 @@ const HOST = process.env.HOST || '0.0.0.0';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const COOKIE_FILE = process.env.COOKIE_FILE || path.join(__dirname, '.cookie');
 const QQ_COOKIE_FILE = process.env.QQ_COOKIE_FILE || path.join(__dirname, '.qq-cookie');
+const KUGOU_COOKIE_FILE = process.env.KUGOU_COOKIE_FILE || path.join(__dirname, '.kugou-cookie');
+const SODA_COOKIE_FILE = process.env.SODA_COOKIE_FILE || path.join(__dirname, '.soda-cookie');
 const UPDATE_WORK_DIR = process.env.MINERADIO_UPDATE_DIR || path.join(__dirname, 'updates');
 const UPDATE_DOWNLOAD_DIR = process.env.MINERADIO_UPDATE_DOWNLOAD_DIR || path.join(UPDATE_WORK_DIR, 'downloads');
 const UPDATE_PATCH_BACKUP_DIR = process.env.MINERADIO_PATCH_BACKUP_DIR || path.join(UPDATE_WORK_DIR, 'backups', 'patches');
@@ -184,6 +193,22 @@ catch (e) { qqCookie = ''; }
 function saveQQCookie(c) {
   qqCookie = normalizeCookieHeader(c) || rawCookieFallback(c);
   try { fs.writeFileSync(QQ_COOKIE_FILE, qqCookie); } catch (e) {}
+}
+
+let kugouCookie = '';
+try { if (fs.existsSync(KUGOU_COOKIE_FILE)) kugouCookie = fs.readFileSync(KUGOU_COOKIE_FILE, 'utf8').trim(); }
+catch (e) { kugouCookie = ''; }
+function saveKugouCookie(c) {
+  kugouCookie = normalizeCookieHeader(c) || rawCookieFallback(c);
+  try { fs.writeFileSync(KUGOU_COOKIE_FILE, kugouCookie); } catch (e) {}
+}
+
+let sodaCookie = '';
+try { if (fs.existsSync(SODA_COOKIE_FILE)) sodaCookie = fs.readFileSync(SODA_COOKIE_FILE, 'utf8').trim(); }
+catch (e) { sodaCookie = ''; }
+function saveSodaCookie(c) {
+  sodaCookie = normalizeCookieHeader(c) || rawCookieFallback(c);
+  try { fs.writeFileSync(SODA_COOKIE_FILE, sodaCookie); } catch (e) {}
 }
 
 // ---------- 工具 ----------
@@ -1478,6 +1503,102 @@ function normalizeQQCookieInput(cookieText) {
   if (obj.uin) obj.uin = normalizeQQUin(obj.uin);
   return serializeCookieObject(obj);
 }
+function decodeKugouCookieValue(value) {
+  let text = String(value || '').trim();
+  text = text.replace(/%u([0-9a-f]{4})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  for (let i = 0; i < 2; i++) {
+    try {
+      const decoded = decodeURIComponent(text.replace(/\+/g, '%20')).trim();
+      if (!decoded || decoded === text) break;
+      text = decoded;
+    } catch (e) {
+      break;
+    }
+  }
+  return text;
+}
+function expandKugouCookieObject(input) {
+  const out = { ...(input || {}) };
+  Object.keys(input || {}).forEach(key => {
+    const decoded = decodeKugouCookieValue(input[key]);
+    if (!decoded || decoded.indexOf('=') < 0) return;
+    decoded.split(/[&|]/).forEach(part => {
+      const idx = part.indexOf('=');
+      if (idx <= 0) return;
+      const nestedKey = part.slice(0, idx).trim();
+      const nestedValue = part.slice(idx + 1).trim();
+      if (nestedKey && !out[nestedKey]) out[nestedKey] = nestedValue;
+    });
+  });
+  return out;
+}
+function kugouCookieObject() {
+  return expandKugouCookieObject(parseCookieString(kugouCookie));
+}
+function kugouCookieValue(obj, names) {
+  obj = obj || kugouCookieObject();
+  const lower = {};
+  Object.keys(obj || {}).forEach(key => { lower[key.toLowerCase()] = obj[key]; });
+  for (const name of names) {
+    const direct = obj[name];
+    const folded = lower[String(name).toLowerCase()];
+    const value = direct != null ? direct : folded;
+    if (value != null && String(value).trim() !== '') return decodeKugouCookieValue(value);
+  }
+  return '';
+}
+function kugouCookieUserId(obj) {
+  const raw = kugouCookieValue(obj, ['UserID', 'userid', 'userId', 'KugooID', 'uid', 'kg_uid']);
+  return String(raw || '').replace(/[^\w-]/g, '');
+}
+function kugouCookieToken(obj) {
+  return kugouCookieValue(obj, ['token', 't', 'Token', 'kg_token', 'KuGooToken', 'KugooToken', 'KG_TOKEN']);
+}
+function kugouCookieNickname(obj) {
+  return kugouCookieValue(obj, ['NickName', 'nickname', 'nick', 'UserName', 'username', 'name']);
+}
+function kugouCookieAvatar(obj) {
+  return kugouCookieValue(obj, ['Pic', 'pic', 'avatar', 'Avatar', 'headimg', 'headpic', 'photo']);
+}
+function normalizeKugouCookieInput(cookieText) {
+  const obj = expandKugouCookieObject(parseCookieString(cookieText));
+  const userId = kugouCookieUserId(obj);
+  const token = kugouCookieToken(obj);
+  if (userId && !obj.UserID) obj.UserID = userId;
+  if (userId && !obj.userid) obj.userid = userId;
+  if (token && !obj.token) obj.token = token;
+  if (token && !obj.t) obj.t = token;
+  if (!obj.mid && obj.kg_mid) obj.mid = obj.kg_mid;
+  if (!obj.kg_mid && obj.mid) obj.kg_mid = obj.mid;
+  if (!obj.kg_dfid && obj.dfid) obj.kg_dfid = obj.dfid;
+  return serializeCookieObject(obj);
+}
+function sodaCookieObject() {
+  return parseCookieString(sodaCookie);
+}
+function sodaCookieValue(obj, names) {
+  obj = obj || sodaCookieObject();
+  const lower = {};
+  Object.keys(obj || {}).forEach(key => { lower[key.toLowerCase()] = obj[key]; });
+  for (const name of names) {
+    const value = obj[name] != null ? obj[name] : lower[String(name).toLowerCase()];
+    if (value != null && String(value).trim() !== '') {
+      try { return decodeURIComponent(String(value).replace(/\+/g, '%20')).trim(); }
+      catch (e) { return String(value).trim(); }
+    }
+  }
+  return '';
+}
+function sodaCookieUserId(obj) {
+  return sodaCookieValue(obj, ['user_id', 'uid', 'uid_tt', 'uid_tt_ss', 'sid_uid', 'webid', 'od']);
+}
+function sodaCookieHasLogin(cookieText) {
+  const obj = parseCookieString(cookieText || sodaCookie);
+  return !!(obj.sessionid || obj.sessionid_ss || obj.sid_guard || obj.sid_tt || obj.sid_ucp_v1 || obj.uid_tt || obj.uid_tt_ss || obj.n_mh);
+}
+function normalizeSodaCookieInput(cookieText) {
+  return normalizeCookieHeader(cookieText);
+}
 function playbackRestriction(provider, category, message, action, extra) {
   return {
     provider,
@@ -1586,6 +1707,55 @@ function mapSongRecord(s) {
     cover: album.picUrl || album.coverUrl || '',
     duration: s.dt || s.duration || 0,
     fee: s.fee,
+  };
+}
+function kugouSizedImage(url, size) {
+  url = String(url || '').trim();
+  if (!url) return '';
+  url = url.replace(/\\\//g, '/').replace(/^\s*\/\//, 'https://');
+  if (/^http:\/\//i.test(url)) url = url.replace(/^http:\/\//i, 'https://');
+  size = size || 500;
+  return url.replace(/\{size\}/g, String(size));
+}
+function mapKugouSongRecord(s) {
+  s = s || {};
+  const trans = s.trans_param || s.transParam || {};
+  const hash = s.hash || s.file_hash || s.fileHash || '';
+  const highHash = s.sqhash || s['320hash'] || s.hash320 || s.highhash || trans.ogg_320_hash || '';
+  const cover = kugouSizedImage(trans.union_cover || s.album_img || s.imgurl || s.imgUrl || s.cover || '', 500);
+  const singerInfo = Array.isArray(s.singerinfo) ? s.singerinfo : (Array.isArray(s.authors) ? s.authors : []);
+  let singer = s.singername || s.singerName || s.author_name || s.authorName ||
+    singerInfo.map(a => a && (a.name || a.author_name || a.singername)).filter(Boolean).join(' / ') || '';
+  let name = s.songname || s.songName || s.filename || s.fileName || s.audio_name || s.name || '';
+  name = String(name || '').replace(/\.(mp3|flac|m4a|ogg|wav)$/i, '');
+  if (name && /\s+-\s+/.test(name)) {
+    const parts = String(name).split(/\s+-\s+/);
+    const prefix = parts.shift() || '';
+    const rest = parts.join(' - ') || name;
+    if (!singer) singer = prefix;
+    if (!singer || prefix === singer || singer.split(/\s*(?:\/|,|\u3001)\s*/).includes(prefix)) name = rest;
+  }
+  const album = s.album_name || s.albumName || (s.albuminfo && s.albuminfo.name) || (s.album_info && s.album_info.name) || '';
+  const rawDuration = Number(s.duration || s.timelength || s.timeLength || s.timelen || s.timeLen || 0) || 0;
+  return {
+    provider: 'kugou',
+    source: 'kugou',
+    type: 'kugou',
+    id: s.album_audio_id || s.audio_id || s.mixsongid || hash || (name + '|' + singer),
+    hash,
+    highHash,
+    sqhash: s.sqhash || '',
+    hash320: s['320hash'] || s.hash320 || trans.ogg_320_hash || '',
+    albumAudioId: s.album_audio_id || s.audio_id || s.mixsongid || '',
+    albumId: s.album_id || s.albumid || s.req_albumid || '',
+    name,
+    artist: singer,
+    artists: singer ? singer.split(/\s*(?:\/|,|\u3001)\s*/).filter(Boolean).map(name => ({ name })) : [],
+    album,
+    cover,
+    duration: rawDuration * (rawDuration > 0 && rawDuration < 10000 ? 1000 : 1),
+    fee: Number(s.pay_type || s.payType || s.privilege || s.media_pay_type || s.media_privilege || 0) || 0,
+    playable: String(s.fail_process || s.media_fail_process || '') !== '4',
   };
 }
 function mapDiscoverPlaylist(pl, tag) {
@@ -1733,8 +1903,64 @@ async function handleDiscoverHome() {
 
 const QQ_MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg';
 const QQ_SMARTBOX_URL = 'https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg';
+const KUGOU_SEARCH_URL = 'http://msearchcdn.kugou.com/api/v3/search/song';
+const KUGOU_PLAYINFO_URL = 'https://m.kugou.com/app/i/getSongInfo.php';
+const KUGOU_SPECIAL_SONG_URL = 'http://mobilecdn.kugou.com/api/v3/special/song';
+const KUGOU_LYRIC_SEARCH_URL = 'http://lyrics.kugou.com/search';
+const KUGOU_LYRIC_DOWNLOAD_URL = 'http://lyrics.kugou.com/download';
+const KUGOU_GATEWAY_URL = 'https://gateway.kugou.com';
+const KUGOU_WEB_SONGINFO_URL = 'https://wwwapi.kugou.com/play/songinfo';
+const KUGOU_WEB_SONGINFO_RETRY_URL = 'https://wwwapiretry.kugou.com/play/songinfo';
+const KUGOU_LOGIN_BY_TOKEN_URL = 'http://login.user.kugou.com/v5/login_by_token';
+const KUGOU_H5_SIGN_SALT = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt';
+const KUGOU_APP_PLAY_SALT = '57ae12eb6890223e355ccfcb74edf70d1005';
+const KUGOU_APP_SIGN_SALT = 'OIlwieks28dk2k092lksi2UIkp';
+const KUGOU_APP_KEY_SALT = '57ae12eb6890223e355ccfcb74edf70d';
+const KUGOU_APP_ID = 1005;
+const KUGOU_APP_CLIENTVER = 20489;
+const KUGOU_WEB_COOKIE_KEYS = Object.freeze([
+  'KuGoo',
+  'KugooID',
+  'kg_mid',
+  'mid',
+  'dfid',
+  'kg_dfid',
+  't',
+  'token',
+  'UserID',
+  'userid',
+  'ct',
+  'a_id',
+  'vip_type',
+  'vip_token',
+  'KUGOU_API_MID',
+]);
+const KUGOU_LOGIN_AES_KEY = '90b8382a1bb4ccdcf063102053fd75b8';
+const KUGOU_LOGIN_AES_IV = 'f063102053fd75b8';
+const KUGOU_PUBLIC_RSA_KEY = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDIAG7QOELSYoIJvTFJhMpe1s/gbjDJX51HBNnEl5HXqTW6lQ7LC8jr9fWZTwusknp+sVGzwd40MwP6U5yDE27M/X1+UR4tvOGOqp94TJtQ1EPnWGWXngpeIW5GxoQGao1rmYWAu6oi1z9XkChrsUdC6DJE5E221wf/4WLFxwAtRQIDAQAB
+-----END PUBLIC KEY-----`;
+const SODA_SEARCH_URL = 'https://api.qishui.com/luna/pc/search/track';
+const SODA_TRACK_V2_URL = 'https://api.qishui.com/luna/pc/track_v2';
+const SODA_APP_API_BASE = 'https://api5-lq.qishui.com/luna';
+const SODA_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
+const SODA_APP_USER_AGENT = 'SodaMusic/3.0.0 (Windows NT 10.0; Win64; x64)';
+const DEFAULT_FFMPEG_BIN = 'D:\\ffmpeg\\ffmpeg-8.1-essentials_build\\bin\\ffmpeg.exe';
+const FFMPEG_BIN = process.env.FFMPEG_BIN || (fs.existsSync(DEFAULT_FFMPEG_BIN) ? DEFAULT_FFMPEG_BIN : 'ffmpeg');
+const SODA_AUDIO_CACHE_TTL_MS = 10 * 60 * 1000;
+const SODA_AUDIO_CACHE_MAX_ENTRIES = 6;
+const SODA_AUDIO_CACHE_MAX_BYTES = 72 * 1024 * 1024;
+const SODA_AUDIO_BUFFER_MAX_BYTES = 36 * 1024 * 1024;
+const sodaAudioCache = new Map();
+const sodaAudioInflight = new Map();
+let sodaAudioCacheBytes = 0;
 const QQ_HEADERS = {
   Referer: 'https://y.qq.com/',
+  'User-Agent': UA,
+};
+const KUGOU_HEADERS = {
+  Referer: 'https://www.kugou.com/',
+  Origin: 'https://www.kugou.com',
   'User-Agent': UA,
 };
 
@@ -2327,6 +2553,33 @@ async function getQQLoginInfo() {
   }
 }
 
+async function getKugouLoginInfo() {
+  const cookieObj = kugouCookieObject();
+  const userId = kugouCookieUserId(cookieObj);
+  const token = kugouCookieToken(cookieObj);
+  const nickname = kugouCookieNickname(cookieObj);
+  const avatar = kugouCookieAvatar(cookieObj);
+  const vipType = Number(kugouCookieValue(cookieObj, ['vip_type', 'vipType', 'viptype']) || 0) || 0;
+  const vipToken = kugouCookieValue(cookieObj, ['vip_token', 'vipToken', 'VIP_TOKEN']);
+  return {
+    provider: 'kugou',
+    loggedIn: !!(userId && token),
+    preview: false,
+    userId,
+    nickname: nickname || (userId ? ('酷狗 ' + userId) : '酷狗音乐'),
+    avatar,
+    vipType,
+    vipLevel: vipType > 0 ? 'vip' : 'none',
+    isVip: vipType > 0,
+    vipLabel: vipType > 0 ? '酷狗 VIP' : '已登录，待会员授权',
+    hasCookie: !!kugouCookie,
+    tokenReady: !!token,
+    vipTokenReady: !!vipToken,
+    playlistReady: !!(userId && token),
+    profileSource: nickname || avatar ? 'cookie' : 'fallback',
+  };
+}
+
 async function qqGetJSON(targetUrl, params, opts) {
   opts = opts || {};
   const u = new URL(targetUrl);
@@ -2339,11 +2592,309 @@ async function qqGetJSON(targetUrl, params, opts) {
   return parseJSONText(text);
 }
 
+async function kugouGetJSON(targetUrl, params, opts) {
+  opts = opts || {};
+  const u = new URL(targetUrl);
+  Object.keys(params || {}).forEach(k => {
+    if (params[k] != null && params[k] !== '') u.searchParams.set(k, String(params[k]));
+  });
+  const text = await requestText(u.toString(), {
+    headers: { ...KUGOU_HEADERS, ...(opts.headers || {}) },
+  });
+  return parseJSONText(text);
+}
+
+function md5Hex(input) {
+  return crypto.createHash('md5').update(String(input || '')).digest('hex');
+}
+
+function kugouRandomString(len) {
+  const chars = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let out = '';
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+function kugouAesEncrypt(data, opt) {
+  opt = opt || {};
+  const text = typeof data === 'object' ? JSON.stringify(data) : String(data || '');
+  const tempKey = opt.key || kugouRandomString(16).toLowerCase();
+  const key = opt.iv ? opt.key : md5Hex(tempKey).slice(0, 32);
+  const iv = opt.iv || key.slice(-16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key, 'utf8'), Buffer.from(iv, 'utf8'));
+  const hex = Buffer.concat([cipher.update(Buffer.from(text, 'utf8')), cipher.final()]).toString('hex');
+  return opt.key && opt.iv ? hex : { str: hex, key: tempKey };
+}
+
+function kugouAesDecrypt(hex, tempKey) {
+  const key = md5Hex(tempKey).slice(0, 32);
+  const iv = key.slice(-16);
+  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key, 'utf8'), Buffer.from(iv, 'utf8'));
+  const text = Buffer.concat([decipher.update(Buffer.from(String(hex || ''), 'hex')), decipher.final()]).toString('utf8');
+  try { return JSON.parse(text); } catch (e) { return text; }
+}
+
+function kugouRsaRawEncrypt(data) {
+  const input = Buffer.from(typeof data === 'object' ? JSON.stringify(data) : String(data || ''), 'utf8');
+  const padded = Buffer.alloc(128);
+  input.copy(padded, 0, 0, Math.min(input.length, padded.length));
+  return crypto.publicEncrypt({
+    key: KUGOU_PUBLIC_RSA_KEY,
+    padding: crypto.constants.RSA_NO_PADDING,
+  }, padded).toString('hex');
+}
+
+function kugouAndroidSignature(params, bodyText) {
+  const parts = Object.keys(params || {}).sort().map(key => {
+    const value = params[key];
+    return `${key}=${value && typeof value === 'object' ? JSON.stringify(value) : value}`;
+  });
+  return md5Hex(`${KUGOU_APP_SIGN_SALT}${parts.join('')}${bodyText || ''}${KUGOU_APP_SIGN_SALT}`);
+}
+
+function kugouAppSignKey(hash, mid, userId, appId) {
+  return md5Hex(`${hash}${KUGOU_APP_KEY_SALT}${appId || KUGOU_APP_ID}${mid || ''}${userId || 0}`);
+}
+
+async function kugouAndroidRequest(targetUrl, params, opts) {
+  opts = opts || {};
+  const device = {
+    ...kugouCookieDevice(opts.cookieObj),
+    ...(opts.device || {}),
+  };
+  const clienttime = Math.floor(Date.now() / 1000);
+  const merged = {
+    dfid: device.dfid || '-',
+    mid: device.mid || '-',
+    uuid: '-',
+    appid: opts.appid || KUGOU_APP_ID,
+    clientver: opts.clientver || KUGOU_APP_CLIENTVER,
+    clienttime,
+    ...(params || {}),
+  };
+  if (device.token && merged.token == null) merged.token = device.token;
+  if (device.userId && merged.userid == null) merged.userid = device.userId;
+  const bodyText = opts.body == null ? '' : (typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body));
+  if (!opts.notSignature && !opts.notSign && !merged.signature) merged.signature = kugouAndroidSignature(merged, bodyText);
+  const u = new URL(targetUrl);
+  const query = Object.keys(merged)
+    .filter(key => merged[key] != null)
+    .map(key => {
+      let value = encodeURIComponent(String(merged[key]));
+      if (key === 'ppage_id') value = value.replace(/%2C/gi, ',');
+      return `${encodeURIComponent(key)}=${value}`;
+    })
+    .join('&');
+  const requestUrl = u.toString() + (u.search ? '&' : '?') + query;
+  const headers = {
+    ...KUGOU_HEADERS,
+    'User-Agent': 'Android15-1070-11083-46-0-DiscoveryDRADProtocol-wifi',
+    dfid: merged.dfid,
+    mid: merged.mid,
+    clienttime: merged.clienttime,
+    'kg-rc': '1',
+    'kg-thash': '5d816a0',
+    'kg-rec': '1',
+    'kg-rf': 'B9EDA08A64250DEFFBCADDEE00F8F25F',
+    ...(opts.headers || {}),
+  };
+  if (bodyText) {
+    headers['Content-Type'] = 'application/json;charset=UTF-8';
+    headers['Content-Length'] = Buffer.byteLength(bodyText);
+  }
+  const text = await requestText(requestUrl, {
+    method: opts.method || (bodyText ? 'POST' : 'GET'),
+    headers,
+  }, bodyText);
+  return parseKugouTaggedJSON(text);
+}
+
+function kugouCookieDevice(obj) {
+  obj = obj || kugouCookieObject();
+  return {
+    userId: kugouCookieUserId(obj),
+    token: kugouCookieToken(obj),
+    mid: kugouCookieValue(obj, ['kg_mid', 'mid', 'KUGOU_API_MID']) || 'undefined',
+    dfid: kugouCookieValue(obj, ['dfid', 'kg_dfid', 'DFID']) || '-',
+    vipType: Number(kugouCookieValue(obj, ['vip_type', 'vipType', 'viptype']) || 0) || 0,
+    vipToken: kugouCookieValue(obj, ['vip_token', 'vipToken', 'VIP_TOKEN']),
+  };
+}
+
+function kugouRawCookieValue(obj, name) {
+  const lowerName = String(name || '').toLowerCase();
+  const key = Object.keys(obj || {}).find(k => String(k).toLowerCase() === lowerName);
+  return key ? obj[key] : '';
+}
+
+function kugouCookieHeaderValue(value) {
+  let text = String(value || '').trim();
+  if (!text) return '';
+  if (/[^\x21-\x7e]|[;\r\n]/.test(text)) {
+    const decoded = decodeKugouCookieValue(text);
+    try { text = encodeURIComponent(decoded || text); }
+    catch (e) { text = encodeURIComponent(text); }
+  }
+  return text.replace(/[\r\n;]/g, ch => encodeURIComponent(ch));
+}
+
+function kugouWebCookieHeader(obj) {
+  obj = obj || kugouCookieObject();
+  const rawObj = parseCookieString(kugouCookie);
+  const picked = [];
+  KUGOU_WEB_COOKIE_KEYS.forEach(key => {
+    const rawValue = kugouRawCookieValue(rawObj, key);
+    const value = rawValue || kugouCookieValue(obj, [key]);
+    const safeValue = kugouCookieHeaderValue(value);
+    if (safeValue) picked.push(`${key}=${safeValue}`);
+  });
+  return picked.join('; ');
+}
+
+function kugouWebPlaybackDevice(obj) {
+  obj = obj || kugouCookieObject();
+  const mid = kugouCookieValue(obj, ['kg_mid', 'mid']) ||
+    kugouCookieValue(obj, ['KUGOU_API_MID']) ||
+    md5Hex(`${Date.now()}-${Math.random()}`);
+  return {
+    userId: kugouCookieUserId(obj) || '0',
+    token: kugouCookieToken(obj) || '',
+    mid,
+    dfid: kugouCookieValue(obj, ['dfid', 'kg_dfid', 'DFID']) || '-',
+  };
+}
+
+async function refreshKugouMobileLoginCookie(cookieText) {
+  const obj = expandKugouCookieObject(parseCookieString(cookieText));
+  const device = kugouCookieDevice(obj);
+  if (!device.userId || !device.token) return cookieText;
+  const now = Date.now();
+  const loginCipher = kugouAesEncrypt({
+    clienttime: Math.floor(now / 1000),
+    token: device.token,
+  }, { key: KUGOU_LOGIN_AES_KEY, iv: KUGOU_LOGIN_AES_IV });
+  const paramsCipher = kugouAesEncrypt({});
+  const body = {
+    dfid: device.dfid || '-',
+    p3: loginCipher,
+    plat: 1,
+    t1: 0,
+    t2: 0,
+    t3: 'MCwwLDAsMCwwLDAsMCwwLDA=',
+    pk: kugouRsaRawEncrypt({ clienttime_ms: now, key: paramsCipher.key }),
+    params: paramsCipher.str,
+    userid: device.userId,
+    clienttime_ms: now,
+  };
+  try {
+    const json = await kugouAndroidRequest(KUGOU_LOGIN_BY_TOKEN_URL, {}, {
+      device,
+      method: 'POST',
+      body,
+    });
+    if (Number(json && json.status) !== 1) return cookieText;
+    const data = { ...((json && json.data) || {}) };
+    if (data.secu_params) {
+      const decrypted = kugouAesDecrypt(data.secu_params, paramsCipher.key);
+      if (decrypted && typeof decrypted === 'object') Object.assign(data, decrypted);
+      else if (decrypted) data.token = decrypted;
+    }
+    const next = {
+      ...obj,
+      userid: data.userid || device.userId,
+      UserID: data.userid || device.userId,
+      KugooID: data.userid || device.userId,
+      token: data.token || device.token,
+      t: data.token || device.token,
+      t1: data.t1 || obj.t1 || '',
+      vip_type: data.vip_type || obj.vip_type || obj.vipType || 0,
+      vip_token: data.vip_token || obj.vip_token || '',
+      dfid: device.dfid || obj.dfid || '-',
+      kg_dfid: device.dfid || obj.kg_dfid || '-',
+      mid: device.mid || obj.mid || '',
+      kg_mid: device.mid || obj.kg_mid || '',
+      KUGOU_API_MID: obj.KUGOU_API_MID || '',
+    };
+    return serializeCookieObject(next);
+  } catch (e) {
+    console.warn('[KugouLogin] token refresh failed:', e.message);
+    return cookieText;
+  }
+}
+
+function kugouH5Signature(params, bodyText) {
+  const parts = Object.keys(params || {}).sort().map(k => `${k}=${params[k]}`);
+  if (bodyText) parts.push(bodyText);
+  return md5Hex([KUGOU_H5_SIGN_SALT, ...parts, KUGOU_H5_SIGN_SALT].join(''));
+}
+
+async function kugouH5SignedRequest(pathname, body, opts) {
+  opts = opts || {};
+  const device = {
+    ...kugouCookieDevice(opts.cookieObj),
+    ...(opts.device || {}),
+  };
+  if (!device.userId || !device.token) {
+    const err = new Error('KUGOU_LOGIN_REQUIRED');
+    err.code = 'KUGOU_LOGIN_REQUIRED';
+    throw err;
+  }
+  const bodyText = body == null ? '' : JSON.stringify(body);
+  const params = {
+    srcappid: 2919,
+    clientver: 20000,
+    clienttime: Date.now(),
+    mid: device.mid,
+    uuid: device.mid,
+    dfid: device.dfid,
+    appid: 1014,
+    plat: 4,
+    userid: device.userId,
+    token: device.token,
+    ...(opts.params || {}),
+  };
+  params.signature = kugouH5Signature(params, bodyText);
+  const u = new URL(pathname, KUGOU_GATEWAY_URL);
+  Object.keys(params).forEach(k => {
+    if (params[k] != null && params[k] !== '') u.searchParams.set(k, String(params[k]));
+  });
+  const headers = {
+    ...KUGOU_HEADERS,
+    'User-Agent': opts.userAgent || UA,
+    ...(opts.headers || {}),
+  };
+  if (bodyText) {
+    headers['Content-Type'] = 'application/json;charset=UTF-8';
+    headers['Content-Length'] = Buffer.byteLength(bodyText);
+  }
+  const text = await requestText(u.toString(), {
+    method: opts.method || (bodyText ? 'POST' : 'GET'),
+    headers,
+  }, bodyText);
+  return parseJSONText(text);
+}
+
+function kugouGatewayOk(json) {
+  if (!json) return false;
+  const status = Number(json.status);
+  const errorCode = Number(json.error_code);
+  return status === 1 && (!Number.isFinite(errorCode) || errorCode === 0);
+}
+
+function normalizeKugouHash(song, preferHigh) {
+  song = song || {};
+  if (preferHigh) {
+    return song.sqhash || song.hash320 || song['320hash'] || song.highHash || song.hash || '';
+  }
+  return song.hash || song.file_hash || song.fileHash || song.sqhash || song.hash320 || song['320hash'] || '';
+}
+
 function audioProxyHeadersFor(audioUrl, range) {
   const headers = { 'User-Agent': UA, Referer: 'https://music.163.com/' };
   try {
     const host = new URL(audioUrl).hostname.toLowerCase();
     if (host.includes('qq.com') || host.includes('qpic.cn')) headers.Referer = 'https://y.qq.com/';
+    if (host.includes('kugou.com')) headers.Referer = 'https://www.kugou.com/';
   } catch (e) {}
   if (range) headers.Range = range;
   return headers;
@@ -2647,6 +3198,1402 @@ async function handleQQSearch(keywords, limit) {
     seen.add(key);
     return !!song.name;
   });
+}
+
+async function handleKugouSearch(keywords, limit) {
+  const kw = String(keywords || '').trim();
+  if (!kw) return [];
+  console.log('[KugouSearch]', kw, 'limit:', limit);
+  const json = await kugouGetJSON(KUGOU_SEARCH_URL, {
+    plat: 0,
+    version: 9108,
+    keyword: kw,
+    page: 1,
+    pagesize: Math.max(4, Math.min(24, parseInt(limit || '12', 10) || 12)),
+    showtype: 1,
+  });
+  const list = json && json.data && Array.isArray(json.data.info) ? json.data.info : [];
+  const seen = new Set();
+  return list.map(mapKugouSongRecord).filter(song => {
+    const key = song && (song.hash || song.id || (song.name + '|' + song.artist));
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return !!song.name;
+  });
+}
+
+function kugouUserPlaylistTrackCount(pl) {
+  return Number(pl && (pl.count || pl.m_count || pl.per_count || pl.music_count || pl.total || 0)) || 0;
+}
+
+function mapKugouUserPlaylist(pl, userId) {
+  pl = pl || {};
+  const listId = pl.listid || pl.list_create_listid || '';
+  const globalId = pl.global_collection_id || pl.list_create_gid ||
+    (listId ? `collection_3_${pl.list_create_userid || userId || 0}_${listId}_0` : '');
+  const cover = kugouSizedImage(pl.pic || pl.sizable_cover || pl.cover || pl.img || pl.create_user_pic || '', 300);
+  return {
+    provider: 'kugou',
+    source: 'kugou',
+    id: globalId ? String(globalId) : String(listId || ''),
+    listid: listId ? String(listId) : '',
+    globalCollectionId: globalId ? String(globalId) : '',
+    name: pl.name || pl.listname || pl.title || '',
+    cover,
+    trackCount: kugouUserPlaylistTrackCount(pl),
+    playCount: Number(pl.play_count || pl.playcount || pl.listen_num || 0) || 0,
+    creator: pl.list_create_username || pl.create_username || pl.username || 'Kugou',
+    subscribed: Number(pl.is_mine || 0) === 0,
+    specialType: 0,
+  };
+}
+
+function extractKugouPersonalListId(id) {
+  const raw = String(id || '').trim();
+  if (!raw) return '';
+  if (/^collection_/i.test(raw)) {
+    const parts = raw.split('_');
+    return parts[3] ? String(parts[3]).replace(/[^\w-]/g, '') : '';
+  }
+  return raw.replace(/[^\w-]/g, '');
+}
+
+async function handleKugouUserPlaylists(page, pagesize) {
+  const cookieObj = kugouCookieObject();
+  const device = kugouCookieDevice(cookieObj);
+  device.mid = kugouCookieValue(cookieObj, ['KUGOU_API_MID']) || device.mid || 'undefined';
+  if (!device.dfid || device.dfid === '-') device.dfid = kugouRandomString(24);
+  if (!device.userId || !device.token) {
+    return { loggedIn: false, provider: 'kugou', playlists: [], playlistReady: false };
+  }
+  const pageNo = Math.max(1, parseInt(page || '1', 10) || 1);
+  const size = Math.max(10, Math.min(200, parseInt(pagesize || '100', 10) || 100));
+  const body = {
+    userid: device.userId,
+    total_ver: 979,
+    type: 2,
+    page: pageNo,
+    pagesize: size,
+  };
+  const json = await kugouH5SignedRequest('/v7/get_all_list', body, {
+    cookieObj,
+    device,
+    headers: { 'x-router': 'cloudlist.service.kugou.com' },
+  });
+  if (!kugouGatewayOk(json)) {
+    const err = new Error('KUGOU_USER_PLAYLISTS_FAILED_' + (json && (json.error_code || json.status || 'UNKNOWN')));
+    err.body = json;
+    throw err;
+  }
+  const data = json.data || {};
+  const seen = new Set();
+  const playlists = (Array.isArray(data.info) ? data.info : [])
+    .map(pl => mapKugouUserPlaylist(pl, device.userId))
+    .filter(pl => {
+      if (!pl.id || !pl.name || seen.has(pl.id)) return false;
+      seen.add(pl.id);
+      return true;
+    });
+  return {
+    loggedIn: true,
+    provider: 'kugou',
+    userId: device.userId,
+    playlistReady: true,
+    total: Number(data.list_count || data.collect_count || playlists.length) || playlists.length,
+    playlists,
+  };
+}
+
+function mapKugouPlaylistTrack(raw) {
+  return mapKugouSongRecord(raw || {});
+}
+
+function compactKugouGatewayAttempt(label, json, extra) {
+  return {
+    label,
+    status: json && json.status,
+    error_code: json && json.error_code,
+    message: json && (json.error || json.message || json.msg),
+    ...(extra || {}),
+  };
+}
+
+function kugouPlaylistInfoRows(data) {
+  data = data || {};
+  if (Array.isArray(data.info)) return data.info;
+  if (Array.isArray(data.list)) return data.list;
+  if (Array.isArray(data.songs)) return data.songs;
+  return [];
+}
+
+async function handleKugouPersonalPlaylistTracks(id, limit) {
+  const cookieObj = kugouCookieObject();
+  const device = kugouCookieDevice(cookieObj);
+  if (!device.userId || !device.token) return { loggedIn: false, provider: 'kugou', tracks: [] };
+  const rawId = String(id || '').trim();
+  const listId = extractKugouPersonalListId(id);
+  if (!listId) return { loggedIn: true, provider: 'kugou', error: 'Missing Kugou playlist id', playlist: null, tracks: [] };
+  const requestedLimit = parseInt(limit || '50', 10) || 50;
+  const pageSize = Math.max(1, Math.min(50, requestedLimit));
+  const globalCollectionId = /^collection_/i.test(rawId) ? rawId : '';
+  const baseBody = {
+    listid: listId,
+    userid: device.userId,
+    area_code: 1,
+    show_relate_goods: 0,
+    pagesize: pageSize,
+    allplatform: 1,
+    show_cover: 1,
+    type: 0,
+    token: device.token,
+    page: 1,
+  };
+  const bodyWithoutToken = { ...baseBody };
+  delete bodyWithoutToken.token;
+  const variants = [
+    { label: 'v4-primary', pathname: '/v4/get_list_all_file', body: baseBody },
+    { label: 'v4-primary-retry', pathname: '/v4/get_list_all_file', body: baseBody, delay: 180 },
+    { label: 'v4-no-token-body', pathname: '/v4/get_list_all_file', body: bodyWithoutToken },
+    { label: 'v4-type2', pathname: '/v4/get_list_all_file', body: { ...baseBody, type: 2 } },
+    { label: 'v4-plat0', pathname: '/v4/get_list_all_file', body: baseBody, params: { plat: 0 } },
+    { label: 'v3-primary', pathname: '/v3/get_list_all_file', body: baseBody },
+  ];
+  if (globalCollectionId) {
+    variants.splice(3, 0, {
+      label: 'v4-global-id',
+      pathname: '/v4/get_list_all_file',
+      body: { ...baseBody, global_collection_id: globalCollectionId },
+    });
+  }
+  const attempts = [];
+  let emptyOkResult = null;
+  for (const variant of variants) {
+    if (variant.delay) await new Promise(resolve => setTimeout(resolve, variant.delay));
+    try {
+      const json = await kugouH5SignedRequest(variant.pathname, variant.body, {
+        cookieObj,
+        device,
+        params: variant.params || {},
+        headers: { 'x-router': 'cloudlist.service.kugou.com' },
+      });
+      const data = json && json.data || {};
+      const rawTracks = kugouPlaylistInfoRows(data);
+      attempts.push(compactKugouGatewayAttempt(variant.label, json, {
+        count: Number(data.count || rawTracks.length) || rawTracks.length,
+        rows: rawTracks.length,
+      }));
+      if (!kugouGatewayOk(json)) continue;
+      const tracks = rawTracks.map(mapKugouPlaylistTrack).filter(song => song && song.name && (song.hash || song.id));
+      const expectedCount = Number(data.count || data.total || tracks.length || rawTracks.length) || tracks.length;
+      const result = {
+        loggedIn: true,
+        provider: 'kugou',
+        playlist: {
+          provider: 'kugou',
+          id: String(id || listId),
+          listid: String(listId),
+          name: data.name || data.listname || '',
+          cover: '',
+          trackCount: expectedCount,
+        },
+        tracks,
+        attempts,
+      };
+      if (tracks.length || expectedCount <= 0) return result;
+      emptyOkResult = emptyOkResult || result;
+    } catch (err) {
+      attempts.push({
+        label: variant.label,
+        error: err.message,
+        statusCode: err.statusCode || 0,
+      });
+    }
+  }
+  if (emptyOkResult) return emptyOkResult;
+  const last = attempts[attempts.length - 1] || {};
+  const code = last.error_code || last.status || last.statusCode || 'UNKNOWN';
+  const err = new Error('KUGOU_PLAYLIST_TRACKS_FAILED_' + code);
+  err.body = { provider: 'kugou', attempts };
+  throw err;
+}
+
+async function handleKugouPlaylistTracks(id, limit) {
+  const specialId = String(id || '').replace(/[^\w-]/g, '').trim();
+  if (!specialId) return { provider: 'kugou', error: 'Missing Kugou playlist id', playlist: null, tracks: [] };
+  if (/^collection_/i.test(String(id || '').trim())) return handleKugouPersonalPlaylistTracks(id, limit);
+  const maybePersonalListId = /^\d{1,5}$/.test(specialId);
+  if (maybePersonalListId) {
+    try {
+      const personal = await handleKugouPersonalPlaylistTracks(specialId, limit);
+      if (personal && Array.isArray(personal.tracks) && personal.tracks.length) return personal;
+    } catch (e) {
+      // Numeric public special IDs still use the public endpoint below.
+    }
+  }
+  const json = await kugouGetJSON(KUGOU_SPECIAL_SONG_URL, {
+    specialid: specialId,
+    area_code: 1,
+    page: 1,
+    plat: 2,
+    pagesize: Math.max(1, Math.min(500, parseInt(limit || '500', 10) || 500)),
+    version: 8990,
+  }, { headers: { 'User-Agent': 'IPhone-8990-searchSong' } });
+  const data = json && json.data || {};
+  const rawTracks = Array.isArray(data.info) ? data.info : [];
+  const tracks = rawTracks.map(mapKugouPlaylistTrack).filter(song => song && song.name && (song.hash || song.id));
+  return {
+    provider: 'kugou',
+    playlist: {
+      provider: 'kugou',
+      id: specialId,
+      name: data.specialname || data.special_name || data.name || '',
+      cover: kugouSizedImage(data.img || data.pic || data.sizable_cover || data.cover || '', 300),
+      trackCount: Number(data.total || data.count || tracks.length) || tracks.length,
+    },
+    tracks,
+  };
+}
+
+function classifyKugouPlaybackRestriction(info) {
+  const rawMessage = String((info && (info.error || info.msg || info.message)) || '').trim();
+  const payType = Number(info && (info.pay_type || info.payType || 0)) || 0;
+  const privilege = Number(info && (info.privilege || info['128privilege'] || 0)) || 0;
+  const status = Number(info && info.status);
+  const lower = rawMessage.toLowerCase();
+  if (/付费|会员|购买|vip|pay/.test(lower + rawMessage) || payType > 0 || privilege > 0 || status === 2) {
+    return playbackRestriction('kugou', 'paid_required', '酷狗音乐当前接口未获得这首歌的会员播放授权', 'upgrade', { payType, privilege, rawMessage, status });
+  }
+  return playbackRestriction('kugou', 'url_unavailable', rawMessage || '酷狗音乐没有返回可播放地址，可能受版权、会员或地区限制', 'switch_source', { payType, privilege, rawMessage, status });
+}
+
+async function handleKugouSongInfo(hash, albumId) {
+  const h = String(hash || '').trim();
+  if (!h) return null;
+  const info = await kugouGetJSON(KUGOU_PLAYINFO_URL, {
+    cmd: 'playInfo',
+    hash: h,
+    album_id: albumId || '',
+  });
+  return info || null;
+}
+
+function firstKugouPlayableUrl(value) {
+  if (!value) return '';
+  if (typeof value === 'string') {
+    const text = value.trim();
+    return /^https?:\/\//i.test(text) ? text : '';
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstKugouPlayableUrl(item);
+      if (found) return found;
+    }
+    return '';
+  }
+  if (typeof value === 'object') {
+    for (const key of Object.keys(value)) {
+      const found = firstKugouPlayableUrl(value[key]);
+      if (found) return found;
+    }
+  }
+  return '';
+}
+
+function compactKugouPlayAttempt(label, info) {
+  const ok = Number(info && info.status) === 1;
+  const data = info && info.data && typeof info.data === 'object' ? info.data : null;
+  return {
+    label,
+    status: info && info.status,
+    errorCode: info && (info.error_code || info.err_code || info.errcode || info.code || data && (data.error_code || data.err_code || data.code)),
+    error: info && (info.error || info.message || info.msg || info.errmsg || data && (data.error || data.message || data.msg || data.errmsg)),
+    hasUrl: ok && !!firstKugouPlayableUrl(info && (
+      info.url || info.play_url || info.playUrl || info.play_backup_url || info.backup_url ||
+      data && (data.url || data.play_url || data.playUrl || data.play_backup_url || data.backup_url)
+    )),
+  };
+}
+
+function parseKugouTaggedJSON(text) {
+  const clean = String(text || '')
+    .replace(/<!--KG_TAG_RES_START-->/g, '')
+    .replace(/<!--KG_TAG_RES_END-->/g, '')
+    .trim();
+  return parseJSONText(clean);
+}
+
+async function handleKugouAppSongInfo(hash, albumId, albumAudioId) {
+  const h = String(hash || '').trim();
+  if (!h) return null;
+  const cookieObj = kugouCookieObject();
+  const device = kugouCookieDevice(cookieObj);
+  const userId = device.userId || '0';
+  const token = device.token || '';
+  const mid = device.mid || String(Date.now());
+  const dfid = device.dfid || '-';
+  const normalizedHash = h.toUpperCase();
+  const key = md5Hex(normalizedHash + KUGOU_APP_PLAY_SALT + mid + userId);
+  const params = {
+    dfid,
+    pid: '2',
+    mid,
+    cmd: '26',
+    token,
+    hash: normalizedHash,
+    area_code: '1',
+    behavior: 'play',
+    appid: '1005',
+    module: '',
+    vipType: '6',
+    ptype: '1',
+    userid: userId,
+    mtype: '1',
+    album_id: albumId || '',
+    pidversion: '3001',
+    key,
+    version: '10209',
+    album_audio_id: albumAudioId || '',
+    with_res_tag: '1',
+  };
+  const u = new URL('/i/v2/', KUGOU_GATEWAY_URL);
+  Object.keys(params).forEach(k => {
+    if (params[k] != null && params[k] !== '') u.searchParams.set(k, String(params[k]));
+  });
+  const headers = {
+    ...KUGOU_HEADERS,
+    'User-Agent': 'Android511-AndroidPhone-10159-18-0-SearchAll-wifi',
+    'x-router': 'tracker.kugou.com',
+  };
+  const text = await requestText(u.toString(), { headers });
+  return parseKugouTaggedJSON(text);
+}
+
+async function handleKugouOfficialWebSongInfo(hash, albumId, albumAudioId, encodeAlbumAudioId) {
+  const h = String(hash || '').trim();
+  const encodedAudioId = String(encodeAlbumAudioId || '').trim();
+  if (!h && !encodedAudioId) return null;
+  const cookieObj = kugouCookieObject();
+  const device = kugouWebPlaybackDevice(cookieObj);
+  const cookieHeader = kugouWebCookieHeader(cookieObj);
+  const params = {
+    srcappid: '2919',
+    clientver: '20000',
+    clienttime: Date.now(),
+    mid: device.mid,
+    uuid: device.mid,
+    dfid: device.dfid,
+    appid: 1014,
+    platid: 4,
+  };
+  if (device.token) params.token = device.token;
+  if (device.userId) params.userid = device.userId;
+  if (encodedAudioId) {
+    params.encode_album_audio_id = encodedAudioId;
+  } else {
+    params.hash = h.toUpperCase();
+    if (albumId) params.album_id = albumId;
+    if (albumAudioId) params.album_audio_id = albumAudioId;
+  }
+  params.signature = kugouH5Signature(params);
+
+  const requestUrls = [KUGOU_WEB_SONGINFO_URL, KUGOU_WEB_SONGINFO_RETRY_URL];
+  let last = null;
+  for (const endpoint of requestUrls) {
+    const u = new URL(endpoint);
+    Object.keys(params).forEach(key => {
+      if (params[key] != null) u.searchParams.set(key, String(params[key]));
+    });
+    const headers = {
+      ...KUGOU_HEADERS,
+      Referer: encodedAudioId
+        ? `https://www.kugou.com/mixsong/${encodeURIComponent(encodedAudioId)}.html`
+        : 'https://www.kugou.com/',
+      'User-Agent': UA,
+    };
+    if (cookieHeader) headers.Cookie = cookieHeader;
+    try {
+      const text = await requestText(u.toString(), { headers });
+      const json = parseJSONText(text);
+      last = { ...(json || {}), requestedKugouEndpoint: endpoint };
+      const data = last && last.data && typeof last.data === 'object' ? last.data : last;
+      const playableUrl = firstKugouPlayableUrl(data && (
+        data.play_url || data.playUrl || data.url || data.play_backup_url || data.backup_url
+      ));
+      if (Number(last && last.status) === 1 && playableUrl) return last;
+    } catch (e) {
+      last = { status: 0, error: e.message, requestedKugouEndpoint: endpoint };
+    }
+  }
+  return last;
+}
+
+function kugouQualityCandidates(qualityPreference) {
+  const q = normalizeQualityPreference(qualityPreference);
+  if (q === 'standard') return ['128', '320'];
+  if (q === 'high') return ['320', '128'];
+  return ['flac', '320', '128'];
+}
+
+async function handleKugouV5SongInfo(hash, albumId, albumAudioId, qualityPreference) {
+  const h = String(hash || '').trim();
+  if (!h) return null;
+  const cookieObj = kugouCookieObject();
+  const device = kugouCookieDevice(cookieObj);
+  if (!device.userId || !device.token) return null;
+  const hashLower = h.toLowerCase();
+  const qualities = kugouQualityCandidates(qualityPreference);
+  let last = null;
+  for (const quality of qualities) {
+    const params = {
+      album_id: Number(albumId || 0),
+      area_code: 1,
+      hash: hashLower,
+      ssa_flag: 'is_fromtrack',
+      version: 11430,
+      page_id: 151369488,
+      quality,
+      album_audio_id: Number(albumAudioId || 0),
+      behavior: 'play',
+      pid: 2,
+      cmd: 26,
+      pidversion: 3001,
+      IsFreePart: 0,
+      ppage_id: '463467626,350369493,788954147',
+      cdnBackup: 1,
+      module: '',
+      clientver: 11430,
+      key: kugouAppSignKey(hashLower, device.mid, device.userId, KUGOU_APP_ID),
+    };
+    try {
+      const json = await kugouAndroidRequest(new URL('/v5/url', KUGOU_GATEWAY_URL).toString(), params, {
+        device,
+        headers: { 'x-router': 'trackercdn.kugou.com' },
+      });
+      last = { ...(json || {}), requestedKugouQuality: quality };
+      const url = firstKugouPlayableUrl(json && (json.url || json.play_url || json.playUrl || json.play_backup_url || json.backup_url));
+      if (Number(json && json.status) === 1 && url) return last;
+    } catch (e) {
+      last = { status: 0, error: e.message, requestedKugouQuality: quality };
+    }
+  }
+  return last;
+}
+
+async function handleKugouSongUrl(hash, albumId, qualityPreference, albumAudioId, encodeAlbumAudioId) {
+  const requestedQuality = normalizeQualityPreference(qualityPreference);
+  const h = String(hash || '').trim();
+  const encodedAudioId = String(encodeAlbumAudioId || '').trim();
+  if (!h && !encodedAudioId) return { provider: 'kugou', url: '', playable: false, error: 'MISSING_HASH', message: 'Missing Kugou song hash' };
+  let info = null;
+  try {
+    info = h ? await handleKugouSongInfo(h, albumId) : null;
+  } catch (e) {
+    info = { status: 0, error: e.message };
+  }
+  const url = firstKugouPlayableUrl(info && (info.url || info.play_url || info.playUrl));
+  const cover = kugouSizedImage(info && (info.album_img || info.imgUrl || info.imgurl || info.image), 500);
+  if (Number(info && info.status) === 1 && url) {
+    return {
+      provider: 'kugou',
+      url,
+      trial: false,
+      playable: true,
+      level: requestedQuality,
+      quality: info && (info.extName || info.bitRate || info.bitRate === 0) ? String(info.extName || info.bitRate) : '酷狗音源',
+      br: info && (info.bitRate || info.bitrate || 0),
+      cover,
+      requestedQuality,
+      playbackSource: 'kugou-web',
+    };
+  }
+  let officialWebInfo = null;
+  try {
+    officialWebInfo = await handleKugouOfficialWebSongInfo(h, albumId, albumAudioId, encodedAudioId);
+  } catch (e) {
+    officialWebInfo = { status: 0, error: e.message };
+  }
+  const officialData = officialWebInfo && officialWebInfo.data && typeof officialWebInfo.data === 'object'
+    ? officialWebInfo.data
+    : officialWebInfo;
+  const officialUrl = firstKugouPlayableUrl(officialData && (
+    officialData.play_url || officialData.playUrl || officialData.url ||
+    officialData.play_backup_url || officialData.backup_url
+  ));
+  if (Number(officialWebInfo && officialWebInfo.status) === 1 && officialUrl) {
+    return {
+      provider: 'kugou',
+      url: officialUrl,
+      trial: Number(officialData && officialData.is_free_part) === 1,
+      playable: true,
+      level: requestedQuality,
+      quality: officialData && (officialData.extname || officialData.extName || officialData.fileExt || officialData.bitrate || officialData.bitRate)
+        ? String(officialData.extname || officialData.extName || officialData.fileExt || officialData.bitrate || officialData.bitRate)
+        : 'kugou-official-web',
+      br: officialData && (officialData.bitrate || officialData.bitRate || 0),
+      cover: kugouSizedImage(officialData && (
+        officialData.sizable_cover || officialData.album_img || officialData.img || officialData.imgUrl || officialData.image
+      ) || cover, 500),
+      requestedQuality,
+      playbackSource: 'kugou-official-web',
+      attempts: [
+        compactKugouPlayAttempt('web-playinfo', info),
+        compactKugouPlayAttempt('official-web', officialWebInfo),
+      ],
+    };
+  }
+  let appInfo = null;
+  let v5Info = null;
+  try {
+    appInfo = await handleKugouAppSongInfo(h, albumId, albumAudioId);
+  } catch (e) {
+    appInfo = { status: 0, error: e.message };
+  }
+  try {
+    v5Info = await handleKugouV5SongInfo(h, albumId, albumAudioId, requestedQuality);
+  } catch (e) {
+    v5Info = { status: 0, error: e.message };
+  }
+  const v5Url = firstKugouPlayableUrl(v5Info && (v5Info.url || v5Info.play_url || v5Info.playUrl || v5Info.play_backup_url || v5Info.backup_url));
+  if (v5Url) {
+    return {
+      provider: 'kugou',
+      url: v5Url,
+      trial: false,
+      playable: true,
+      level: requestedQuality,
+      quality: v5Info && (v5Info.extName || v5Info.fileExt || v5Info.bitRate || v5Info.bitRate === 0 || v5Info.requestedKugouQuality)
+        ? String(v5Info.extName || v5Info.fileExt || v5Info.bitRate || v5Info.requestedKugouQuality)
+        : '酷狗客户端音源',
+      br: v5Info && (v5Info.bitRate || v5Info.bitrate || 0),
+      cover,
+      requestedQuality,
+      playbackSource: 'kugou-v5',
+      attempts: [
+        compactKugouPlayAttempt('web-playinfo', info),
+        compactKugouPlayAttempt('official-web', officialWebInfo),
+        compactKugouPlayAttempt('app-v2', appInfo),
+        compactKugouPlayAttempt('app-v5', v5Info),
+      ],
+    };
+  }
+  const appUrl = firstKugouPlayableUrl(appInfo && (appInfo.url || appInfo.play_url || appInfo.playUrl || appInfo.play_backup_url || appInfo.backup_url));
+  if (appUrl) {
+    return {
+      provider: 'kugou',
+      url: appUrl,
+      trial: false,
+      playable: true,
+      level: requestedQuality,
+      quality: appInfo && (appInfo.extName || appInfo.fileExt || appInfo.bitRate || appInfo.bitRate === 0) ? String(appInfo.extName || appInfo.fileExt || appInfo.bitRate) : '酷狗客户端音源',
+      br: appInfo && (appInfo.bitRate || appInfo.bitrate || 0),
+      cover,
+      requestedQuality,
+      playbackSource: 'kugou-app',
+      attempts: [
+        compactKugouPlayAttempt('web-playinfo', info),
+        compactKugouPlayAttempt('official-web', officialWebInfo),
+        compactKugouPlayAttempt('app-v2', appInfo),
+        compactKugouPlayAttempt('app-v5', v5Info),
+      ],
+    };
+  }
+  const restrictionInfo = {
+    ...(info || {}),
+    ...(officialWebInfo || {}),
+    ...(appInfo || {}),
+    ...(v5Info || {}),
+    error: (v5Info && (v5Info.error || v5Info.msg || v5Info.message || v5Info.errmsg)) ||
+      (appInfo && (appInfo.error || appInfo.msg || appInfo.message)) ||
+      (officialWebInfo && (officialWebInfo.error || officialWebInfo.msg || officialWebInfo.message || officialWebInfo.errmsg)) ||
+      (info && (info.error || info.msg || info.message)) || '',
+  };
+  const restriction = classifyKugouPlaybackRestriction(restrictionInfo);
+  return {
+    provider: 'kugou',
+    url: '',
+    playable: false,
+    trial: false,
+    error: 'KUGOU_URL_UNAVAILABLE',
+    reason: restriction.category,
+    message: restriction.message,
+    restriction,
+    cover,
+    requestedQuality,
+    rawMessage: (v5Info && (v5Info.error || v5Info.msg || v5Info.message || v5Info.errmsg)) ||
+      (appInfo && (appInfo.error || appInfo.msg || appInfo.message)) ||
+      (officialWebInfo && (officialWebInfo.error || officialWebInfo.msg || officialWebInfo.message || officialWebInfo.errmsg)) ||
+      (info && (info.error || info.msg || info.message || '')),
+    attempts: [
+      compactKugouPlayAttempt('web-playinfo', info),
+      compactKugouPlayAttempt('official-web', officialWebInfo),
+      compactKugouPlayAttempt('app-v2', appInfo),
+      compactKugouPlayAttempt('app-v5', v5Info),
+    ],
+  };
+}
+
+async function handleKugouLyric(hash, keyword, duration) {
+  const h = String(hash || '').trim();
+  const kw = String(keyword || '').trim();
+  const durMs = Math.max(0, Number(duration) || 0);
+  const search = await kugouGetJSON(KUGOU_LYRIC_SEARCH_URL, {
+    ver: 1,
+    man: 'yes',
+    client: 'pc',
+    keyword: kw,
+    duration: durMs,
+    hash: h,
+  });
+  const candidates = search && Array.isArray(search.candidates) ? search.candidates : [];
+  const first = candidates[0];
+  if (!first || !first.id || !first.accesskey) {
+    return { provider: 'kugou', hash: h, lyric: '', source: 'kugou-empty' };
+  }
+  const data = await kugouGetJSON(KUGOU_LYRIC_DOWNLOAD_URL, {
+    ver: 1,
+    client: 'pc',
+    id: first.id,
+    accesskey: first.accesskey,
+    fmt: 'lrc',
+    charset: 'utf8',
+  });
+  let lyric = data && (data.content || data.lyric || '');
+  if (lyric) {
+    const rawLyric = String(lyric).trim();
+    if (!/^\[/.test(rawLyric) && /^[A-Za-z0-9+/=\r\n]+$/.test(rawLyric)) {
+      try {
+        const decoded = Buffer.from(rawLyric, 'base64').toString('utf8');
+        if (/\[\d{1,2}:\d{1,2}/.test(decoded) || /^\s*\[[a-z]+:/i.test(decoded)) lyric = decoded;
+      } catch (e) {}
+    }
+  }
+  return {
+    provider: 'kugou',
+    hash: h,
+    lyric: lyric || '',
+    tlyric: '',
+    yrc: '',
+    source: lyric ? 'kugou-lyric' : 'kugou-empty',
+  };
+}
+
+function sodaBaseParams(extra) {
+  return {
+    aid: '386088',
+    device_platform: 'web',
+    channel: 'pc_web',
+    ...(extra || {}),
+  };
+}
+
+function sodaAppParams(extra) {
+  return {
+    aid: '386088',
+    app_name: 'luna_pc',
+    version_name: '3.0.0',
+    version_code: '30000000',
+    device_platform: 'windows',
+    device_type: 'Windows',
+    os_version: 'Windows',
+    channel: 'official',
+    ac: 'wifi',
+    ...(extra || {}),
+  };
+}
+
+async function sodaGetJSON(targetUrl, params, opts) {
+  opts = opts || {};
+  const u = new URL(targetUrl);
+  Object.keys(params || {}).forEach(k => {
+    if (params[k] != null && params[k] !== '') u.searchParams.set(k, String(params[k]));
+  });
+  const text = await requestText(u.toString(), {
+    headers: {
+      Referer: 'https://qishui.douyin.com/',
+      'User-Agent': SODA_USER_AGENT,
+      ...(opts.headers || {}),
+    },
+  });
+  return parseJSONText(text);
+}
+
+async function sodaAppJSON(pathOrUrl, params, opts) {
+  opts = opts || {};
+  const target = /^https?:\/\//i.test(String(pathOrUrl || ''))
+    ? String(pathOrUrl)
+    : (SODA_APP_API_BASE + '/' + String(pathOrUrl || '').replace(/^\/+/, ''));
+  const u = new URL(target);
+  const mergedParams = sodaAppParams(params || {});
+  Object.keys(mergedParams).forEach(k => {
+    if (u.searchParams.has(k)) return;
+    if (mergedParams[k] != null && mergedParams[k] !== '') u.searchParams.set(k, String(mergedParams[k]));
+  });
+  const headers = {
+    Accept: 'application/json',
+    Referer: 'https://qishui.douyin.com/',
+    Origin: 'https://qishui.douyin.com',
+    'User-Agent': SODA_APP_USER_AGENT,
+    ...(opts.headers || {}),
+  };
+  if (opts.cookie !== false && sodaCookie) headers.Cookie = sodaCookie;
+  const requestOpts = { headers };
+  if (opts.method === 'POST') {
+    requestOpts.method = 'POST';
+    requestOpts.body = JSON.stringify(opts.body || {});
+    requestOpts.headers['Content-Type'] = 'application/json';
+  }
+  const text = await requestText(u.toString(), requestOpts, requestOpts.body);
+  return parseJSONText(text);
+}
+
+function sodaApiStatusMessage(raw) {
+  raw = raw || {};
+  const st = raw.status_info || raw.statusInfo || {};
+  return raw.status_msg || raw.statusMsg || st.status_msg || st.statusMsg || raw.message || raw.msg || raw.error || '';
+}
+
+function sodaSizedImage(img, suffix) {
+  img = img || {};
+  const urls = Array.isArray(img.urls) ? img.urls : [];
+  let base = String(urls[0] || '').trim();
+  const uri = String(img.uri || '').trim();
+  if (!base) return '';
+  if (uri && base.indexOf(uri) < 0) base += uri;
+  suffix = suffix || '~c5_375x375.jpg';
+  if (suffix && base.indexOf('~') < 0 && !/[?&]x-expires=/.test(base)) base += suffix;
+  return base.replace(/^http:\/\//i, 'https://');
+}
+
+function mapSodaTrack(track) {
+  track = track || {};
+  if (track.track) track = track.track;
+  if (track.track_info) track = track.track_info;
+  if (track.entity && track.entity.track) track = track.entity.track;
+  if (track.media && track.media.track) track = track.media.track;
+  const artists = Array.isArray(track.artists) ? track.artists : [];
+  const artist = artists.length
+    ? artists.map(a => a && (a.name || a.simple_display_name)).filter(Boolean).join(' / ')
+    : (track.artist || track.artist_name || track.author || track.singer || '');
+  const album = track.album || {};
+  const labelInfo = track.label_info || track.labelInfo || {};
+  const qualityMap = labelInfo.quality_map || labelInfo.qualityMap || {};
+  const vipQualities = Array.isArray(labelInfo.quality_only_vip_can_play) ? labelInfo.quality_only_vip_can_play : [];
+  const cover = sodaSizedImage(album.url_cover || track.url_cover || track.urlCover || track.cover || track.cover_url || track.pic_url || track.image, '~c5_375x375.jpg') ||
+    String(track.cover || track.cover_url || track.pic_url || track.image || '');
+  const id = String(track.id || track.track_id || track.trackId || track.item_id || track.media_id || '').trim();
+  const duration = Number(track.duration || track.duration_ms || 0) || 0;
+  return {
+    provider: 'soda',
+    source: 'soda',
+    type: 'soda',
+    id,
+    trackId: id,
+    vid: track.vid || '',
+    previewVid: track.preview && track.preview.vid || '',
+    name: track.name || track.title || '',
+    artist,
+    artists: artists.map(a => ({ id: a && a.id || '', name: a && (a.name || a.simple_display_name) || '' })).filter(a => a.name),
+    album: album.name || '',
+    albumId: album.id || '',
+    cover,
+    duration,
+    fee: vipQualities.length || (qualityMap.lossless && qualityMap.lossless.play_detail && qualityMap.lossless.play_detail.need_vip) ? 1 : 0,
+    playable: true,
+  };
+}
+
+function looksLikeSodaTrack(raw) {
+  if (!raw || typeof raw !== 'object') return false;
+  const id = raw.id || raw.track_id || raw.trackId || raw.item_id || raw.media_id;
+  const name = raw.name || raw.title;
+  return !!(id && name);
+}
+
+function collectSodaTracks(raw, out, depth) {
+  out = out || [];
+  depth = depth || 0;
+  if (!raw || depth > 7 || out.length >= 240) return out;
+  if (Array.isArray(raw)) {
+    raw.forEach(item => collectSodaTracks(item, out, depth + 1));
+    return out;
+  }
+  if (typeof raw !== 'object') return out;
+  const candidate = raw.track || raw.track_info || raw.trackInfo || (raw.entity && raw.entity.track) || (raw.media && raw.media.track) || raw;
+  if (looksLikeSodaTrack(candidate)) {
+    const song = mapSodaTrack(candidate);
+    if (song && song.id && song.name && !out.some(item => item.id === song.id)) out.push(song);
+  }
+  [
+    raw.tracks, raw.track_list, raw.trackList, raw.songs, raw.song_list, raw.songList,
+    raw.items, raw.list, raw.data, raw.cards, raw.medias, raw.media_list, raw.mediaList,
+    raw.playlist, raw.collection, raw.result, raw.results, raw.recently_played_media,
+  ].forEach(value => collectSodaTracks(value, out, depth + 1));
+  return out;
+}
+
+function normalizeSodaProfile(raw, cookieObj) {
+  cookieObj = cookieObj || sodaCookieObject();
+  const root = raw && (raw.data || raw.user || raw.profile || raw.me || raw.account || raw) || {};
+  const user = root.user || root.profile || root.account || root;
+  const userId = String(user.user_id || user.userId || user.uid || user.id || sodaCookieUserId(cookieObj) || '').trim();
+  const nickname = user.nickname || user.nick_name || user.name || user.screen_name || sodaCookieValue(cookieObj, ['nickname', 'nick_name', 'name']) || '';
+  const avatarObj = user.avatar || user.avatar_url || user.url_avatar || user.cover || {};
+  const avatar = typeof avatarObj === 'string'
+    ? avatarObj
+    : ((Array.isArray(avatarObj.urls) && avatarObj.urls[0]) || avatarObj.url || avatarObj.uri || '');
+  return {
+    provider: 'soda',
+    loggedIn: !!(userId || sodaCookieHasLogin()),
+    preview: false,
+    userId,
+    nickname: nickname || (userId ? ('汽水用户 ' + userId) : '汽水音乐'),
+    avatar: avatar ? String(avatar).replace(/^http:\/\//i, 'https://') : '',
+    hasCookie: !!sodaCookie,
+    playlistReady: !!sodaCookie,
+    profileSource: userId || nickname || avatar ? 'soda-profile' : 'cookie',
+  };
+}
+
+async function getSodaLoginInfo() {
+  if (!sodaCookie) return { provider: 'soda', loggedIn: false, hasCookie: false, playlistReady: false };
+  const cookieObj = sodaCookieObject();
+  const fallback = normalizeSodaProfile(null, cookieObj);
+  if (!sodaCookieHasLogin()) return { ...fallback, loggedIn: false, hasCookie: true, playlistReady: false };
+  try {
+    const data = await sodaAppJSON('me', {}, { cookie: true });
+    const code = Number(data && data.status_code || 0);
+    if (code === 1000016) return { ...fallback, loggedIn: false, stale: true, message: sodaApiStatusMessage(data), playlistReady: false };
+    const info = normalizeSodaProfile(data, cookieObj);
+    return { ...fallback, ...info, loggedIn: true, profileRawCode: code || undefined };
+  } catch (e) {
+    console.warn('[SodaLogin] profile check failed:', e.message);
+    return { ...fallback, loggedIn: true, profileUnavailable: true };
+  }
+}
+
+async function fetchSodaBuiltinTracks(kind, limit) {
+  const max = Math.max(1, Math.min(100, parseInt(limit || '50', 10) || 50));
+  const attempts = [];
+  const candidates = kind === 'recent'
+    ? [
+        { path: 'me/recently-played-media', params: { count: max, cursor: 0 }, method: 'GET' },
+      ]
+    : [
+        { path: 'feed/song-tab', params: {}, method: 'POST', body: { cursor: 0, count: max } },
+      ];
+  for (const item of candidates) {
+    try {
+      const data = await sodaAppJSON(item.path, item.params, { method: item.method, body: item.body, cookie: true });
+      const code = Number(data && data.status_code || 0);
+      const msg = sodaApiStatusMessage(data);
+      attempts.push({ path: item.path, code, message: msg });
+      if (code === 1000016) return { loggedIn: false, stale: true, tracks: [], attempts, error: msg || 'SODA_LOGIN_REQUIRED' };
+      if (code && code !== 0 && code !== 200) continue;
+      const tracks = collectSodaTracks(data, []).slice(0, max);
+      if (tracks.length) return { loggedIn: true, tracks, attempts };
+    } catch (e) {
+      attempts.push({ path: item.path, error: e.message });
+    }
+  }
+  return { loggedIn: true, tracks: [], attempts, error: attempts.map(a => a.message || a.error).filter(Boolean).join('; ') || '' };
+}
+
+async function handleSodaUserPlaylists() {
+  const info = await getSodaLoginInfo();
+  if (!info.loggedIn) return { loggedIn: false, provider: 'soda', playlists: [], stale: !!info.stale, message: info.message || '' };
+  return {
+    loggedIn: true,
+    provider: 'soda',
+    userId: info.userId || '',
+    playlists: [
+      { provider: 'soda', source: 'soda', id: 'soda:liked', name: '汽水收藏 / 喜欢', cover: info.avatar || '', trackCount: 0, creator: info.nickname || '汽水音乐', subscribed: false, kind: 'liked' },
+      { provider: 'soda', source: 'soda', id: 'soda:recent', name: '汽水最近播放', cover: info.avatar || '', trackCount: 0, creator: info.nickname || '汽水音乐', subscribed: false, kind: 'recent' },
+    ],
+  };
+}
+
+async function handleSodaPlaylistTracks(id, limit) {
+  const info = await getSodaLoginInfo();
+  if (!info.loggedIn) return { loggedIn: false, provider: 'soda', tracks: [], stale: !!info.stale, error: info.message || 'SODA_LOGIN_REQUIRED' };
+  const key = String(id || '').toLowerCase();
+  const kind = key.indexOf('recent') >= 0 ? 'recent' : 'liked';
+  const result = await fetchSodaBuiltinTracks(kind, limit);
+  return {
+    provider: 'soda',
+    loggedIn: !!result.loggedIn,
+    playlist: { id: kind === 'recent' ? 'soda:recent' : 'soda:liked', name: kind === 'recent' ? '汽水最近播放' : '汽水收藏 / 喜欢', trackCount: result.tracks.length },
+    tracks: result.tracks || [],
+    stale: !!result.stale,
+    error: result.error || '',
+    attempts: result.attempts || [],
+  };
+}
+
+async function handleSodaSearch(keywords, limit) {
+  const kw = String(keywords || '').trim();
+  if (!kw) return [];
+  const json = await sodaGetJSON(SODA_SEARCH_URL, sodaBaseParams({
+    q: kw,
+    cursor: '0',
+    search_method: 'input',
+  }));
+  const groups = Array.isArray(json.result_groups) ? json.result_groups : [];
+  const data = groups[0] && Array.isArray(groups[0].data) ? groups[0].data : [];
+  const max = Math.max(1, Math.min(24, parseInt(limit || '12', 10) || 12));
+  const seen = new Set();
+  return data.map(item => mapSodaTrack(item && item.entity && item.entity.track || {})).filter(song => {
+    const key = song && (song.id || (song.name + '|' + song.artist));
+    if (!song || !song.name || !key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, max);
+}
+
+async function handleSodaTrackV2(trackId) {
+  const id = String(trackId || '').trim();
+  if (!id) throw new Error('SODA_TRACK_ID_REQUIRED');
+  return sodaGetJSON(SODA_TRACK_V2_URL, sodaBaseParams({
+    track_id: id,
+    media_type: 'track',
+  }));
+}
+
+function sodaTrackDurationMs(track) {
+  return Number(track && (track.duration || track.duration_ms || 0)) || 0;
+}
+
+function sodaQualityRank(quality) {
+  const q = String(quality || '').toLowerCase();
+  if (/jymaster|master|lossless|hi_res|hires|spatial/.test(q)) return 600;
+  if (/highest/.test(q)) return 500;
+  if (/higher/.test(q)) return 400;
+  if (/medium/.test(q)) return 300;
+  return 100;
+}
+
+function sodaDesiredQualityRank(qualityPreference) {
+  const q = normalizeQualityPreference(qualityPreference);
+  if (q === 'jymaster' || q === 'lossless' || q === 'hires') return 600;
+  if (q === 'exhigh') return 500;
+  if (q === 'standard') return 300;
+  return 400;
+}
+
+function firstSodaPlayUrl(info) {
+  return String((info && (info.MainPlayUrl || info.main_play_url || info.main_url || info.url || info.play_url)) ||
+    (info && (info.BackupPlayUrl || info.backup_play_url || info.backup_url)) || '').trim();
+}
+
+function chooseSodaPlayInfo(list, fullDurationMs, qualityPreference) {
+  list = Array.isArray(list) ? list : [];
+  const fullThreshold = fullDurationMs > 0 ? Math.max(25000, fullDurationMs * 0.82) : 0;
+  const desiredRank = sodaDesiredQualityRank(qualityPreference);
+  const candidates = list.map(item => {
+    const durationMs = (Number(item.Duration || item.duration || 0) || 0) * 1000;
+    const quality = item.Quality || item.quality || '';
+    const url = firstSodaPlayUrl(item);
+    return {
+      raw: item,
+      url,
+      durationMs,
+      quality,
+      full: !fullThreshold || durationMs >= fullThreshold || Math.abs(durationMs - fullDurationMs) <= 2500,
+      rank: sodaQualityRank(quality),
+      distance: Math.abs(sodaQualityRank(quality) - desiredRank),
+    };
+  }).filter(item => item.url);
+  candidates.sort((a, b) => {
+    if (a.full !== b.full) return a.full ? -1 : 1;
+    if (a.distance !== b.distance) return a.distance - b.distance;
+    return b.rank - a.rank;
+  });
+  return candidates[0] || null;
+}
+
+function sodaPlayAuthKey(playAuth) {
+  const data = Buffer.from(String(playAuth || ''), 'base64');
+  if (data.length < 3) throw new Error('SODA_INVALID_PLAY_AUTH');
+  const paddingLen = (data[0] ^ data[1] ^ data[2]) - 48;
+  if (paddingLen < 0 || data.length < paddingLen + 2) throw new Error('SODA_INVALID_PLAY_AUTH_PADDING');
+  const inner = data.subarray(1, data.length - paddingLen);
+  const tmp = Buffer.alloc(inner.length);
+  const buff = Buffer.concat([Buffer.from([0xfa, 0x55]), inner]);
+  for (let i = 0; i < tmp.length; i++) {
+    let v = (inner[i] ^ buff[i]) - bitCount32(i) - 21;
+    while (v < 0) v += 255;
+    tmp[i] = v & 0xff;
+  }
+  const skip = decodeBase36Byte(tmp[0]);
+  const end = 1 + (data.length - paddingLen - 2) - skip;
+  if (end > tmp.length || end < 1) throw new Error('SODA_INVALID_PLAY_AUTH_INDEX');
+  return tmp.subarray(1, end).toString('utf8');
+}
+
+function bitCount32(n) {
+  let u = n >>> 0;
+  u = u - ((u >>> 1) & 0x55555555);
+  u = (u & 0x33333333) + ((u >>> 2) & 0x33333333);
+  return (((u + (u >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
+}
+
+function decodeBase36Byte(byte) {
+  if (byte >= 48 && byte <= 57) return byte - 48;
+  if (byte >= 97 && byte <= 122) return byte - 97 + 10;
+  if (byte >= 65 && byte <= 90) return byte - 65 + 10;
+  return 0xff;
+}
+
+async function resolveSodaPlayableInfo(trackId, qualityPreference) {
+  const trackV2 = await handleSodaTrackV2(trackId);
+  const track = trackV2.track || {};
+  const fullDurationMs = sodaTrackDurationMs(track);
+  const player = trackV2.track_player || {};
+  if (!player.url_player_info) {
+    const err = new Error('SODA_PLAYER_INFO_MISSING');
+    err.category = 'url_unavailable';
+    throw err;
+  }
+  const playInfoJson = await sodaGetJSON(player.url_player_info, {}, { headers: { Referer: 'https://qishui.douyin.com/' } });
+  const playInfoList = playInfoJson && playInfoJson.Result && playInfoJson.Result.Data && playInfoJson.Result.Data.PlayInfoList || [];
+  const chosen = chooseSodaPlayInfo(playInfoList, fullDurationMs, qualityPreference);
+  if (!chosen || !chosen.url) {
+    const err = new Error('SODA_PLAY_URL_MISSING');
+    err.category = 'url_unavailable';
+    throw err;
+  }
+  if (!chosen.full) {
+    const err = new Error('SODA_TRIAL_ONLY');
+    err.category = 'trial_only';
+    err.durationMs = chosen.durationMs;
+    err.fullDurationMs = fullDurationMs;
+    throw err;
+  }
+  const auth = chosen.raw.PlayAuth || chosen.raw.play_auth || '';
+  const encryption = String(chosen.raw.EncryptionMethod || chosen.raw.encryption_method || '').toLowerCase();
+  return {
+    track,
+    url: chosen.url,
+    playAuth: auth,
+    decryptKey: auth ? sodaPlayAuthKey(auth) : '',
+    encrypted: !!auth || /cenc|aes|ctr/.test(encryption),
+    quality: chosen.quality || '',
+    br: Number(chosen.raw.Bitrate || chosen.raw.bitrate || 0) || 0,
+    size: Number(chosen.raw.Size || chosen.raw.size || 0) || 0,
+    durationMs: chosen.durationMs || fullDurationMs,
+    fullDurationMs,
+    format: chosen.raw.Format || chosen.raw.format || 'm4a',
+  };
+}
+
+async function handleSodaSongUrl(trackId, qualityPreference) {
+  const id = String(trackId || '').trim();
+  if (!id) return { provider: 'soda', url: '', playable: false, error: 'SODA_TRACK_ID_REQUIRED', message: 'Missing Soda track id' };
+  try {
+    const info = await resolveSodaPlayableInfo(id, qualityPreference);
+    return {
+      provider: 'soda',
+      url: info.encrypted
+        ? ('/api/soda/audio?id=' + encodeURIComponent(id) + '&quality=' + encodeURIComponent(qualityPreference || ''))
+        : info.url,
+      playable: true,
+      trial: false,
+      level: normalizeQualityPreference(qualityPreference),
+      quality: info.quality || 'soda',
+      br: info.br,
+      size: info.size,
+      duration: info.durationMs,
+      encrypted: info.encrypted,
+      playbackSource: info.encrypted ? 'soda-buffer' : 'soda-direct',
+    };
+  } catch (err) {
+    const category = err.category || (/trial/i.test(err.message) ? 'trial_only' : 'url_unavailable');
+    const message = category === 'trial_only'
+      ? '汽水音乐当前只返回试听片段'
+      : '汽水音乐没有返回可播放的全长音频';
+    const restriction = playbackRestriction('soda', category, message, 'switch_source', {
+      rawMessage: err.message,
+      durationMs: err.durationMs || 0,
+      fullDurationMs: err.fullDurationMs || 0,
+    });
+    return {
+      provider: 'soda',
+      url: '',
+      playable: false,
+      trial: category === 'trial_only',
+      error: err.message,
+      reason: category,
+      message,
+      restriction,
+    };
+  }
+}
+
+function parseSodaLyric(raw) {
+  return String(raw || '').split(/\r?\n/).map(line => {
+    const m = String(line || '').trim().match(/^\[(\d+),(\d+)\](.*)$/);
+    if (!m) return '';
+    const start = parseInt(m[1], 10) || 0;
+    const content = String(m[3] || '').replace(/<[^>]+>/g, '');
+    const min = Math.floor(start / 60000);
+    const sec = Math.floor((start % 60000) / 1000);
+    const cs = Math.floor((start % 1000) / 10);
+    return '[' + String(min).padStart(2, '0') + ':' + String(sec).padStart(2, '0') + '.' + String(cs).padStart(2, '0') + ']' + content;
+  }).filter(Boolean).join('\n');
+}
+
+async function handleSodaLyric(trackId) {
+  const data = await handleSodaTrackV2(trackId);
+  const raw = data && data.lyric && data.lyric.content || '';
+  return { provider: 'soda', id: String(trackId || ''), lyric: parseSodaLyric(raw), tlyric: '', yrc: '', source: raw ? 'soda-lyric' : 'soda-empty' };
+}
+
+function sodaAudioCacheKey(trackId, qualityPreference) {
+  return String(trackId || '').trim() + '|' + normalizeQualityPreference(qualityPreference || '');
+}
+
+function pruneSodaAudioCache() {
+  const now = Date.now();
+  for (const [key, entry] of sodaAudioCache) {
+    if (!entry || now - entry.createdAt > SODA_AUDIO_CACHE_TTL_MS) {
+      sodaAudioCache.delete(key);
+      sodaAudioCacheBytes -= entry && entry.size || 0;
+    }
+  }
+  while (sodaAudioCache.size > SODA_AUDIO_CACHE_MAX_ENTRIES || sodaAudioCacheBytes > SODA_AUDIO_CACHE_MAX_BYTES) {
+    const firstKey = sodaAudioCache.keys().next().value;
+    if (!firstKey) break;
+    const entry = sodaAudioCache.get(firstKey);
+    sodaAudioCache.delete(firstKey);
+    sodaAudioCacheBytes -= entry && entry.size || 0;
+  }
+  if (sodaAudioCacheBytes < 0) sodaAudioCacheBytes = 0;
+}
+
+function getSodaAudioCache(key) {
+  pruneSodaAudioCache();
+  const entry = sodaAudioCache.get(key);
+  if (!entry) return null;
+  sodaAudioCache.delete(key);
+  entry.touchedAt = Date.now();
+  sodaAudioCache.set(key, entry);
+  return entry;
+}
+
+function setSodaAudioCache(key, entry) {
+  if (!entry || !entry.buffer || entry.size > SODA_AUDIO_CACHE_MAX_BYTES) return entry;
+  const old = sodaAudioCache.get(key);
+  if (old) sodaAudioCacheBytes -= old.size || 0;
+  sodaAudioCache.set(key, entry);
+  sodaAudioCacheBytes += entry.size || 0;
+  pruneSodaAudioCache();
+  return entry;
+}
+
+function sodaAudioCandidateQualities(qualityPreference) {
+  const candidates = [];
+  [qualityPreference, normalizeQualityPreference(qualityPreference), 'exhigh', 'standard'].forEach(q => {
+    q = String(q || '').trim();
+    if (q && !candidates.includes(q)) candidates.push(q);
+  });
+  if (!candidates.length) candidates.push('hires', 'exhigh', 'standard');
+  return candidates;
+}
+
+async function fetchSodaDirectAudioBuffer(info) {
+  const up = await fetch(info.url, { headers: { 'User-Agent': SODA_USER_AGENT, Referer: 'https://qishui.douyin.com/' } });
+  if (!up.ok) throw new Error('SODA_DIRECT_AUDIO_HTTP_' + up.status);
+  const buffer = Buffer.from(await up.arrayBuffer());
+  if (!buffer.length) throw new Error('SODA_DIRECT_AUDIO_EMPTY');
+  if (buffer.length > SODA_AUDIO_BUFFER_MAX_BYTES) throw new Error('SODA_AUDIO_TOO_LARGE');
+  return {
+    buffer,
+    contentType: audioContentTypeForUrl(info.url, up.headers.get('content-type')),
+  };
+}
+
+function decryptSodaAudioBuffer(info) {
+  return new Promise((resolve, reject) => {
+    const ff = spawn(FFMPEG_BIN, [
+    '-hide_banner',
+    '-loglevel', 'error',
+    '-decryption_key', info.decryptKey,
+    '-i', info.url,
+    '-vn',
+    '-c:a', 'libmp3lame',
+    '-b:a', '192k',
+    '-f', 'mp3',
+    'pipe:1',
+    ], { windowsHide: true });
+    const chunks = [];
+    let total = 0;
+    let stderr = '';
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      try { if (!ff.killed) ff.kill('SIGKILL'); } catch (e) {}
+      reject(new Error('SODA_FFMPEG_TIMEOUT'));
+    }, 90000);
+    ff.stdout.on('data', chunk => {
+      total += chunk.length;
+      if (total > SODA_AUDIO_BUFFER_MAX_BYTES) {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          try { if (!ff.killed) ff.kill('SIGKILL'); } catch (e) {}
+          reject(new Error('SODA_AUDIO_TOO_LARGE'));
+        }
+        return;
+      }
+      chunks.push(chunk);
+    });
+    ff.stderr.on('data', d => {
+      stderr += d.toString();
+      if (stderr.length > 4000) stderr = stderr.slice(-4000);
+    });
+    ff.on('error', err => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(err);
+    });
+    ff.on('close', code => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (code !== 0 || !total) {
+        const err = new Error('SODA_FFMPEG_FAILED_' + code);
+        err.detail = stderr.trim();
+        reject(err);
+        return;
+      }
+      resolve({
+        buffer: Buffer.concat(chunks, total),
+        contentType: 'audio/mpeg',
+      });
+    });
+  });
+}
+
+async function buildSodaAudioEntry(trackId, qualityPreference) {
+  const info = await resolveSodaPlayableInfo(trackId, qualityPreference);
+  const audio = info.encrypted
+    ? await decryptSodaAudioBuffer(info)
+    : await fetchSodaDirectAudioBuffer(info);
+  return {
+    buffer: audio.buffer,
+    contentType: audio.contentType || 'audio/mp4',
+    size: audio.buffer.length,
+    info,
+    requestedQuality: String(qualityPreference || ''),
+    actualQuality: info.quality || '',
+    createdAt: Date.now(),
+    touchedAt: Date.now(),
+  };
+}
+
+async function buildSodaAudioEntryWithFallback(trackId, qualityPreference) {
+  let lastErr = null;
+  for (const candidate of sodaAudioCandidateQualities(qualityPreference)) {
+    try {
+      const entry = await buildSodaAudioEntry(trackId, candidate);
+      entry.actualQualityPreference = candidate;
+      return entry;
+    } catch (err) {
+      lastErr = err;
+      if (err && err.category === 'trial_only') continue;
+    }
+  }
+  throw lastErr || new Error('SODA_AUDIO_BUILD_FAILED');
+}
+
+async function getSodaAudioEntry(trackId, qualityPreference) {
+  const key = sodaAudioCacheKey(trackId, qualityPreference);
+  const cached = getSodaAudioCache(key);
+  if (cached) return cached;
+  if (sodaAudioInflight.has(key)) return sodaAudioInflight.get(key);
+  const pending = buildSodaAudioEntryWithFallback(trackId, qualityPreference).then(entry => {
+    setSodaAudioCache(key, entry);
+    const actualKey = sodaAudioCacheKey(trackId, entry.actualQualityPreference || qualityPreference);
+    if (actualKey !== key) setSodaAudioCache(actualKey, entry);
+    return entry;
+  }).finally(() => {
+    sodaAudioInflight.delete(key);
+  });
+  sodaAudioInflight.set(key, pending);
+  return pending;
+}
+
+function parseAudioRange(rangeHeader, total) {
+  const m = String(rangeHeader || '').trim().match(/^bytes=(\d*)-(\d*)$/);
+  if (!m) return null;
+  let start;
+  let end;
+  if (!m[1] && !m[2]) return null;
+  if (!m[1]) {
+    const suffix = parseInt(m[2], 10);
+    if (!Number.isFinite(suffix) || suffix <= 0) return { unsatisfiable: true };
+    start = Math.max(0, total - suffix);
+    end = total - 1;
+  } else {
+    start = parseInt(m[1], 10);
+    end = m[2] ? parseInt(m[2], 10) : total - 1;
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start >= total || end < start) {
+      return { unsatisfiable: true };
+    }
+    end = Math.min(end, total - 1);
+  }
+  return { start, end };
+}
+
+function sendSodaAudioBuffer(req, res, entry) {
+  const buffer = entry.buffer;
+  const total = buffer.length;
+  const baseHeaders = {
+    'Content-Type': entry.contentType || 'audio/mp4',
+    'Access-Control-Allow-Origin': '*',
+    'Cross-Origin-Resource-Policy': 'cross-origin',
+    'Accept-Ranges': 'bytes',
+    'Cache-Control': 'no-store',
+    'X-Soda-Audio-Source': 'buffer',
+  };
+  if (entry.actualQuality) baseHeaders['X-Soda-Quality'] = String(entry.actualQuality);
+  const range = parseAudioRange(req.headers.range || '', total);
+  if (range && range.unsatisfiable) {
+    res.writeHead(416, { ...baseHeaders, 'Content-Range': 'bytes */' + total });
+    res.end();
+    return;
+  }
+  if (range) {
+    const chunk = buffer.subarray(range.start, range.end + 1);
+    res.writeHead(206, {
+      ...baseHeaders,
+      'Content-Length': chunk.length,
+      'Content-Range': 'bytes ' + range.start + '-' + range.end + '/' + total,
+    });
+    if (req.method === 'HEAD') res.end();
+    else res.end(chunk);
+    return;
+  }
+  res.writeHead(200, {
+    ...baseHeaders,
+    'Content-Length': total,
+  });
+  if (req.method === 'HEAD') res.end();
+  else res.end(buffer);
+}
+
+async function streamSodaAudio(req, res, trackId, qualityPreference) {
+  try {
+    const entry = await getSodaAudioEntry(trackId, qualityPreference);
+    sendSodaAudioBuffer(req, res, entry);
+  } catch (err) {
+    if (!res.headersSent) {
+      sendJSON(res, { provider: 'soda', error: err.message, detail: err.detail || '', playable: false }, 500);
+      return;
+    }
+    res.end();
+  }
 }
 
 async function handleQQSongUrl(mid, mediaMid, qualityPreference) {
@@ -3436,6 +5383,32 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pn === '/api/kugou/search') {
+    try {
+      const kw = url.searchParams.get('keywords') || '';
+      const limit = Math.max(4, Math.min(18, parseInt(url.searchParams.get('limit') || '10', 10) || 10));
+      const songs = await handleKugouSearch(kw, limit);
+      sendJSON(res, { provider: 'kugou', songs });
+    } catch (err) {
+      console.error('[KugouSearch]', err);
+      sendJSON(res, { provider: 'kugou', error: err.message, songs: [] }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/soda/search') {
+    try {
+      const kw = url.searchParams.get('keywords') || '';
+      const limit = Math.max(4, Math.min(18, parseInt(url.searchParams.get('limit') || '10', 10) || 10));
+      const songs = await handleSodaSearch(kw, limit);
+      sendJSON(res, { provider: 'soda', songs });
+    } catch (err) {
+      console.error('[SodaSearch]', err);
+      sendJSON(res, { provider: 'soda', error: err.message, songs: [] }, 500);
+    }
+    return;
+  }
+
   if (pn === '/api/qq/song/url') {
     try {
       const mid = url.searchParams.get('mid') || url.searchParams.get('id') || '';
@@ -3450,6 +5423,35 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pn === '/api/kugou/song/url') {
+    try {
+      const hash = url.searchParams.get('hash') || url.searchParams.get('id') || '';
+      const albumId = url.searchParams.get('albumId') || url.searchParams.get('album_id') || '';
+      const albumAudioId = url.searchParams.get('albumAudioId') || url.searchParams.get('album_audio_id') || url.searchParams.get('audioId') || '';
+      const encodeAlbumAudioId = url.searchParams.get('encodeAlbumAudioId') || url.searchParams.get('encode_album_audio_id') || url.searchParams.get('encodeAudioId') || '';
+      const quality = url.searchParams.get('quality') || '';
+      const info = await handleKugouSongUrl(hash, albumId, quality, albumAudioId, encodeAlbumAudioId);
+      sendJSON(res, info);
+    } catch (err) {
+      console.error('[KugouSongUrl]', err);
+      sendJSON(res, { provider: 'kugou', url: '', playable: false, error: err.message }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/soda/song/url') {
+    try {
+      const id = url.searchParams.get('id') || url.searchParams.get('trackId') || url.searchParams.get('track_id') || '';
+      const quality = url.searchParams.get('quality') || '';
+      const info = await handleSodaSongUrl(id, quality);
+      sendJSON(res, info);
+    } catch (err) {
+      console.error('[SodaSongUrl]', err);
+      sendJSON(res, { provider: 'soda', url: '', playable: false, error: err.message }, 500);
+    }
+    return;
+  }
+
   if (pn === '/api/qq/lyric') {
     try {
       const mid = url.searchParams.get('mid') || url.searchParams.get('songmid') || '';
@@ -3460,6 +5462,32 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       console.error('[QQLyric]', err);
       sendJSON(res, { provider: 'qq', error: err.message, lyric: '' }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/kugou/lyric') {
+    try {
+      const hash = url.searchParams.get('hash') || url.searchParams.get('id') || '';
+      const keyword = url.searchParams.get('keyword') || '';
+      const duration = url.searchParams.get('duration') || '0';
+      const data = await handleKugouLyric(hash, keyword, duration);
+      sendJSON(res, data);
+    } catch (err) {
+      console.error('[KugouLyric]', err);
+      sendJSON(res, { provider: 'kugou', error: err.message, lyric: '' }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/soda/lyric') {
+    try {
+      const id = url.searchParams.get('id') || url.searchParams.get('trackId') || url.searchParams.get('track_id') || '';
+      const data = await handleSodaLyric(id);
+      sendJSON(res, data);
+    } catch (err) {
+      console.error('[SodaLyric]', err);
+      sendJSON(res, { provider: 'soda', error: err.message, lyric: '' }, 500);
     }
     return;
   }
@@ -3502,6 +5530,80 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pn === '/api/kugou/login/status') {
+    try {
+      const info = await getKugouLoginInfo();
+      sendJSON(res, info);
+    } catch (err) {
+      console.error('[KugouLoginStatus]', err);
+      sendJSON(res, { provider: 'kugou', loggedIn: false, error: err.message }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/kugou/login/cookie') {
+    try {
+      const body = await readRequestBody(req);
+      const raw = body.cookie || body.data || body.text || '';
+      const normalized = normalizeKugouCookieInput(raw);
+      const obj = expandKugouCookieObject(parseCookieString(normalized));
+      if (!kugouCookieUserId(obj) || !kugouCookieToken(obj)) {
+        sendJSON(res, { provider: 'kugou', loggedIn: false, error: 'INVALID_KUGOU_COOKIE', message: '酷狗 cookie 缺少用户 ID 或有效登录票据' }, 400);
+        return;
+      }
+      const refreshed = await refreshKugouMobileLoginCookie(normalized);
+      saveKugouCookie(refreshed || normalized);
+      const info = await getKugouLoginInfo();
+      sendJSON(res, { ...info, saved: true });
+    } catch (err) {
+      console.error('[KugouLoginCookie]', err);
+      sendJSON(res, { provider: 'kugou', loggedIn: false, error: err.message }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/kugou/logout') {
+    saveKugouCookie('');
+    sendJSON(res, { provider: 'kugou', ok: true, loggedIn: false });
+    return;
+  }
+
+  if (pn === '/api/soda/login/status') {
+    try {
+      const info = await getSodaLoginInfo();
+      sendJSON(res, info);
+    } catch (err) {
+      console.error('[SodaLoginStatus]', err);
+      sendJSON(res, { provider: 'soda', loggedIn: false, error: err.message }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/soda/login/cookie') {
+    try {
+      const body = await readRequestBody(req);
+      const raw = body.cookie || body.data || body.text || '';
+      const normalized = normalizeSodaCookieInput(raw);
+      if (!sodaCookieHasLogin(normalized)) {
+        sendJSON(res, { provider: 'soda', loggedIn: false, error: 'INVALID_SODA_COOKIE', message: '汽水 cookie 缺少有效登录票据' }, 400);
+        return;
+      }
+      saveSodaCookie(normalized);
+      const info = await getSodaLoginInfo();
+      sendJSON(res, { ...info, saved: true });
+    } catch (err) {
+      console.error('[SodaLoginCookie]', err);
+      sendJSON(res, { provider: 'soda', loggedIn: false, error: err.message }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/soda/logout') {
+    saveSodaCookie('');
+    sendJSON(res, { provider: 'soda', ok: true, loggedIn: false });
+    return;
+  }
+
   if (pn === '/api/qq/user/playlists') {
     try {
       const data = await handleQQUserPlaylists();
@@ -3509,6 +5611,30 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       console.error('[QQUserPlaylists]', err);
       sendJSON(res, { provider: 'qq', loggedIn: false, error: err.message, playlists: [] }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/kugou/user/playlists') {
+    try {
+      const page = url.searchParams.get('page') || '1';
+      const pagesize = url.searchParams.get('pagesize') || '100';
+      const data = await handleKugouUserPlaylists(page, pagesize);
+      sendJSON(res, data);
+    } catch (err) {
+      console.error('[KugouUserPlaylists]', err);
+      sendJSON(res, { provider: 'kugou', loggedIn: true, playlistReady: false, error: err.message, playlists: [] });
+    }
+    return;
+  }
+
+  if (pn === '/api/soda/user/playlists') {
+    try {
+      const data = await handleSodaUserPlaylists();
+      sendJSON(res, data);
+    } catch (err) {
+      console.error('[SodaUserPlaylists]', err);
+      sendJSON(res, { provider: 'soda', loggedIn: true, error: err.message, playlists: [] }, 500);
     }
     return;
   }
@@ -3521,6 +5647,43 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       console.error('[QQPlaylistTracks]', err);
       sendJSON(res, { provider: 'qq', error: err.message, tracks: [] }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/soda/playlist/tracks') {
+    try {
+      const id = url.searchParams.get('id') || url.searchParams.get('kind') || '';
+      const limit = url.searchParams.get('limit') || '50';
+      const data = await handleSodaPlaylistTracks(id, limit);
+      sendJSON(res, data);
+    } catch (err) {
+      console.error('[SodaPlaylistTracks]', err);
+      sendJSON(res, { provider: 'soda', error: err.message, tracks: [] }, 500);
+    }
+    return;
+  }
+
+  if (pn === '/api/kugou/playlist/tracks') {
+    try {
+      const id = url.searchParams.get('id') || url.searchParams.get('specialid') || '';
+      const listid = url.searchParams.get('listid') || '';
+      const personal = /^(1|true|yes)$/i.test(url.searchParams.get('personal') || '');
+      const limit = url.searchParams.get('limit') || '50';
+      const personalId = /^collection_/i.test(String(id || '')) ? id : (listid || id);
+      const data = (listid || personal)
+        ? await handleKugouPersonalPlaylistTracks(personalId, limit)
+        : await handleKugouPlaylistTracks(id, limit);
+      sendJSON(res, data);
+    } catch (err) {
+      console.error('[KugouPlaylistTracks]', err);
+      sendJSON(res, {
+        provider: 'kugou',
+        error: err.message,
+        tracks: [],
+        transient: true,
+        attempts: err.body && err.body.attempts || [],
+      }, 500);
     }
     return;
   }
@@ -4160,6 +6323,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ---------- 音频代理 (支持 Range) ----------
+  if (pn === '/api/soda/audio') {
+    const id = url.searchParams.get('id') || url.searchParams.get('trackId') || url.searchParams.get('track_id') || '';
+    const quality = url.searchParams.get('quality') || '';
+    await streamSodaAudio(req, res, id, quality);
+    return;
+  }
+
   if (pn === '/api/audio') {
     try {
       const audioUrl = url.searchParams.get('url');

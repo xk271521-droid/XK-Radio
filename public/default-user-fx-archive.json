@@ -32,6 +32,7 @@
     "lyricHighlightColor": "#fac900",
     "lyricGlowLinked": true,
     "lyricGlowColor": "#008aff",
+    "lyricDisplayMode": "single",
     "lyricFont": "hei",
     "lyricLetterSpacing": 0,
     "lyricLineHeight": 1,

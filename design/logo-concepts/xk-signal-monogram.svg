@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="XK signal monogram logo concept">
+  <defs>
+    <linearGradient id="plate" x1="54" y1="50" x2="456" y2="462" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0a1422"/>
+      <stop offset="0.48" stop-color="#050814"/>
+      <stop offset="1" stop-color="#01030a"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="76" y1="52" x2="438" y2="452" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.18" stop-color="#7df6ff"/>
+      <stop offset="0.52" stop-color="#235bff"/>
+      <stop offset="1" stop-color="#00d8ff"/>
+    </linearGradient>
+    <linearGradient id="glyph" x1="126" y1="132" x2="390" y2="376" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f9fdff"/>
+      <stop offset="0.27" stop-color="#b5f5ff"/>
+      <stop offset="0.60" stop-color="#267fff"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <radialGradient id="pulse" cx="51%" cy="48%" r="52%">
+      <stop offset="0" stop-color="#1be9ff" stop-opacity="0.56"/>
+      <stop offset="0.42" stop-color="#2563ff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="aura" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.04 0 0 0 0 0.72 0 0 0 0 1 0 0 0 0.88 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="22" y="22" width="468" height="468" rx="58" fill="#02050c"/>
+  <path d="M76 42h360l34 34v360l-34 34H76l-34-34V76Z" fill="url(#plate)"/>
+  <path d="M84 56h344l28 28v344l-28 28H84l-28-28V84Z" fill="none" stroke="url(#edge)" stroke-width="6"/>
+  <path d="M112 90h288M112 422h288" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+  <circle cx="256" cy="256" r="170" fill="url(#pulse)" opacity="0.90"/>
+
+  <g fill="none" stroke-linecap="round" opacity="0.64" filter="url(#aura)">
+    <path d="M103 258c36-65 90-99 153-99 64 0 118 34 153 99" stroke="#71f0ff" stroke-width="7"/>
+    <path d="M132 300c31-39 72-60 124-60s94 21 124 60" stroke="#2463ff" stroke-width="5"/>
+    <path d="M160 338c25-22 57-34 96-34s72 12 96 34" stroke="#8bf7ff" stroke-width="4" opacity="0.50"/>
+  </g>
+
+  <g filter="url(#aura)">
+    <path d="M126 151h49l55 78 56-78h49l-77 105 84 115h-52l-62-86-62 86h-52l86-115-74-105Z" fill="url(#glyph)"/>
+    <path d="M317 151h43v89l83-89h54l-91 96 96 124h-54l-70-94-18 19v75h-43V151Z" fill="url(#glyph)" opacity="0.97"/>
+  </g>
+
+  <path d="M191 264h130" stroke="#06101b" stroke-width="9" stroke-linecap="round" opacity="0.42"/>
+  <circle cx="256" cy="304" r="9" fill="#eaffff" opacity="0.86"/>
+  <circle cx="211" cy="309" r="5" fill="#8bf7ff" opacity="0.56"/>
+  <circle cx="301" cy="309" r="5" fill="#8bf7ff" opacity="0.56"/>
+</svg>
