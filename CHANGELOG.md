@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.7 - 2026-07-10
+
+- Changed update checks to run once on startup and then once per hour.
+- Kept the update entry available as a manual refresh/check control.
+
 ## 1.1.6 - 2026-07-10
 
 - Added a pause / continue control for full installer update downloads.

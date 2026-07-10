@@ -9649,6 +9649,9 @@ function lyricEffectUsesCharMeshes(preset) {
   preset = normalizeLyricEffectPreset(preset);
   return /^(bounce|typewriter|magnetic|decode|wave)$/.test(preset);
 }
+function lyricCharFxOwnsTextLayer(data) {
+  return !!(data && data.charFx && data.charFx.group && data.charFx.chars && data.charFx.chars.length);
+}
 function prefersReducedLyricMotion() {
   try {
     return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -9870,6 +9873,8 @@ function buildLyricMesh(text, effectPreset) {
   group.add(textMesh);
   var charFx = buildLyricCharFx(mask, worldW, worldH, pal, effectPreset);
   if (charFx && charFx.group) group.add(charFx.group);
+  // Character effects render the lyric themselves; do not leave a second full-line lyric underneath.
+  if (charFx) textMesh.visible = false;
 
   var sparkCount = 132;
   var pgeo = new THREE.BufferGeometry();
@@ -10337,7 +10342,7 @@ function clearStageLyricsScroll3D() {
 function resetStageLyricsScrollMeshVisuals(mesh) {
   if (!mesh || !mesh.userData || !mesh.userData.lyric) return;
   var data = mesh.userData.lyric;
-  if (data.textMesh) data.textMesh.visible = true;
+  if (data.textMesh) data.textMesh.visible = !lyricCharFxOwnsTextLayer(data);
   if (data.textMat && data.textMat.uniforms) {
     if (data.textMat.uniforms.uOpacity) data.textMat.uniforms.uOpacity.value = 0;
     if (data.textMat.uniforms.uSolar) data.textMat.uniforms.uSolar.value = 0;
@@ -10685,10 +10690,19 @@ function updateStageLyrics3D(dt) {
         data.sun.rotation.z += Math.sin(t * 0.32 + seed) * 0.010 * sunPulse;
       }
       var mainTextFactor = tickLyricCharFx(data, mesh, true, opacity, mesh.userData.lastLyricProgress, t, stageLyrics.beatGlow, bass, false);
-      if (data.textMesh) data.textMesh.visible = true;
+      var charFxOwnsText = lyricCharFxOwnsTextLayer(data);
+      if (data.textMesh) data.textMesh.visible = !charFxOwnsText;
       if (data.textMat && data.textMat.uniforms.uOpacity) data.textMat.uniforms.uOpacity.value = opacity * mainTextFactor;
-      if (mainTextFactor < 1 && data.glowMat) data.glowMat.opacity *= 0.54;
-      if (mainTextFactor < 1 && data.readabilityMat) setLyricReadabilityOpacity(data, Math.max(getLyricReadabilityOpacity(data), Math.min(1, opacity * 0.94)));
+      if (charFxOwnsText) {
+        if (data.readabilityMat) setLyricReadabilityOpacity(data, 0);
+        if (data.glowMat) data.glowMat.opacity = 0;
+        if (data.sunMat) data.sunMat.opacity = 0;
+        if (data.sparkMat) setLyricSparkOpacity(data, 0);
+        if (data.sparks) data.sparks.visible = false;
+      } else {
+        if (mainTextFactor < 1 && data.glowMat) data.glowMat.opacity *= 0.54;
+        if (mainTextFactor < 1 && data.readabilityMat) setLyricReadabilityOpacity(data, Math.max(getLyricReadabilityOpacity(data), Math.min(1, opacity * 0.94)));
+      }
       var effectFloat = lyricMotion.float == null ? 1 : lyricMotion.float;
       var effectRoll = lyricMotion.roll == null ? 1 : lyricMotion.roll;
       var lyricScalePulse = bass * (lyricMotion.bass || 0.038) + beatPulse * (lyricMotion.beat || 0.014);
@@ -10745,10 +10759,19 @@ function updateStageLyrics3D(dt) {
     }
     if (data.sunMat) data.sunMat.opacity = lyricGlowStrength > 0 && !shelfDetailOpen ? opacity * 0.08 * lyricGlowStrength : 0;
     var outgoingMainFactor = tickLyricCharFx(data, mesh, false, opacity, mesh.userData.lastLyricProgress, t, stageLyrics.beatGlow, bass, true);
-    if (data.textMesh) data.textMesh.visible = true;
+    var outgoingCharFxOwnsText = lyricCharFxOwnsTextLayer(data);
+    if (data.textMesh) data.textMesh.visible = !outgoingCharFxOwnsText;
     if (data.textMat && data.textMat.uniforms.uOpacity) data.textMat.uniforms.uOpacity.value = opacity * outgoingMainFactor;
-    if (outgoingMainFactor < 1 && data.glowMat) data.glowMat.opacity *= 0.48;
-    if (outgoingMainFactor < 1 && data.readabilityMat) setLyricReadabilityOpacity(data, Math.max(getLyricReadabilityOpacity(data), Math.min(1, opacity * 0.76)));
+    if (outgoingCharFxOwnsText) {
+      if (data.readabilityMat) setLyricReadabilityOpacity(data, 0);
+      if (data.glowMat) data.glowMat.opacity = 0;
+      if (data.sunMat) data.sunMat.opacity = 0;
+      if (data.sparkMat) setLyricSparkOpacity(data, 0);
+      if (data.sparks) data.sparks.visible = false;
+    } else {
+      if (outgoingMainFactor < 1 && data.glowMat) data.glowMat.opacity *= 0.48;
+      if (outgoingMainFactor < 1 && data.readabilityMat) setLyricReadabilityOpacity(data, Math.max(getLyricReadabilityOpacity(data), Math.min(1, opacity * 0.76)));
+    }
     mesh.position.z -= dt * 0.26;
     mesh.position.y += dt * 0.08;
     mesh.scale.setScalar(0.98 - a * 0.06);
@@ -25860,11 +25883,7 @@ function initUpdatePreview() {
 
 function scheduleUpdatePreviewRefresh() {
   setTimeout(initUpdatePreview, 1800);
-  setTimeout(checkLatestUpdate, 9000);
-  setInterval(checkLatestUpdate, 10 * 60 * 1000);
-  window.addEventListener('focus', function(){
-    checkLatestUpdate();
-  });
+  setInterval(checkLatestUpdate, 60 * 60 * 1000);
 }
 
 function setUpdatePreviewVisible(visible) {
@@ -25885,16 +25904,25 @@ function setUpdatePreviewVisible(visible) {
   }
 }
 
-async function checkLatestUpdate() {
+async function checkLatestUpdate(manual) {
+  if (manual) {
+    updatePreviewState.status = 'checking';
+    updatePreviewState.message = '正在检查最新版本';
+    renderUpdatePreviewPanel();
+    setUpdatePreviewVisible(true);
+  }
   try {
     var data = await apiJson('/api/update/latest?t=' + Date.now());
     applyLatestUpdateInfo(data);
+    if (manual) showToast(data && data.updateAvailable ? '发现新版本' : '当前已是最新版本');
   } catch (e) {
     updatePreviewState.preview = true;
     updatePreviewState.updateAvailable = false;
+    updatePreviewState.status = manual ? 'idle' : updatePreviewState.status;
     updatePreviewState.hero = '当前版本，更新检测已就绪。';
     renderUpdatePreviewPanel();
     setUpdatePreviewVisible(true);
+    if (manual) showToast('检查更新失败：' + ((e && e.message) || '请稍后重试'));
   }
 }
 
@@ -25915,8 +25943,9 @@ function applyLatestUpdateInfo(data) {
   if (Array.isArray(release.notes) && release.notes.length) {
     updatePreviewState.notes = release.notes.slice(0, 4);
   }
+  if (updatePreviewState.status === 'checking') updatePreviewState.status = 'idle';
   renderUpdatePreviewPanel();
-  setUpdatePreviewVisible(updatePreviewState.updateAvailable || updatePreviewState.preview);
+  setUpdatePreviewVisible(true);
 }
 
 function startUpdateIconBreathing() {
@@ -25970,6 +25999,7 @@ function syncUpdatePreviewStateClass() {
   var isError = updatePreviewState.status === 'error';
   var isOpening = updatePreviewState.status === 'opening';
   var isPaused = updatePreviewState.status === 'paused';
+  var isChecking = updatePreviewState.status === 'checking';
   var isPatch = updatePreviewState.mode === 'patch';
   if (entry) {
     entry.classList.toggle('downloading', isDownloading || isOpening);
@@ -25985,7 +26015,8 @@ function syncUpdatePreviewStateClass() {
   var canDownloadUpdate = updatePreviewState.configured && updatePreviewState.updateAvailable && updatePreviewState.downloadUrl;
   var canOpenRelease = updatePreviewState.configured && updatePreviewState.updateAvailable && !updatePreviewState.downloadUrl && updatePreviewState.releaseUrl;
   if (label) {
-    if (isDownloading) label.textContent = (isPatch ? '快速补丁 ' : '正在下载 ') + Math.round(updatePreviewState.progress) + '%';
+    if (isChecking) label.textContent = '正在检查';
+    else if (isDownloading) label.textContent = (isPatch ? '快速补丁 ' : '正在下载 ') + Math.round(updatePreviewState.progress) + '%';
     else if (isPaused) label.textContent = '下载已暂停';
     else if (isOpening) label.textContent = '正在打开安装包';
     else if (isError && updatePreviewState.mode === 'patch' && updatePreviewState.downloadUrl) label.textContent = '下载完整安装包';
@@ -25995,9 +26026,9 @@ function syncUpdatePreviewStateClass() {
     else if (isReady && updatePreviewState.installerOpened) label.textContent = '安装包已打开';
     else if (isReady && updatePreviewState.installerPath) label.textContent = updatePreviewState.cached ? '打开已下载安装包' : '打开安装包';
     else if (isReady) label.textContent = updatePreviewState.configured ? '打开安装包' : '预览完成';
-    else label.textContent = updatePreviewState.patchAvailable ? '安装快速补丁' : ((canDownloadUpdate || canOpenRelease) ? '下载完整安装包' : '立即更新');
+    else label.textContent = updatePreviewState.patchAvailable ? '安装快速补丁' : ((canDownloadUpdate || canOpenRelease) ? '下载完整安装包' : '检查更新');
   }
-  if (btn) btn.disabled = false;
+  if (btn) btn.disabled = isChecking;
   if (pauseBtn) {
     var showPause = updatePreviewState.mode === 'installer' && (isDownloading || isPaused || updatePreviewState.pausable || updatePreviewState.resumable);
     pauseBtn.classList.toggle('show', !!showPause);
@@ -26006,7 +26037,8 @@ function syncUpdatePreviewStateClass() {
   }
   var foot = document.getElementById('update-footnote');
   if (foot) {
-    if (isDownloading) foot.textContent = (updatePreviewState.message || (isPatch ? '正在下载快速补丁' : '正在下载完整安装包')) + (updateProgressDetailText() ? ' · ' + updateProgressDetailText() : '');
+    if (isChecking) foot.textContent = '正在检查 GitHub Releases 最新版本。';
+    else if (isDownloading) foot.textContent = (updatePreviewState.message || (isPatch ? '正在下载快速补丁' : '正在下载完整安装包')) + (updateProgressDetailText() ? ' · ' + updateProgressDetailText() : '');
     else if (isPaused) foot.textContent = '下载已暂停。点击“继续”会重新连接下载线路。';
     else if (isError) foot.textContent = '下载失败：' + (updatePreviewState.errorReason || updatePreviewState.errorDetail || updatePreviewState.message || '请稍后重试') + (updatePreviewState.failedAttempts && updatePreviewState.failedAttempts.length ? ' · 已尝试 ' + updatePreviewState.failedAttempts.length + ' 条线路' : '');
     else if (isReady && isPatch) foot.textContent = updatePreviewState.restartRequired ? '快速补丁已应用，重启 XK Radio 后生效。' : '快速补丁已应用。';
@@ -26345,6 +26377,10 @@ function startUpdatePreviewDownload() {
     } else {
       showToast('这个版本还没有可用下载链接');
     }
+    return;
+  }
+  if (updatePreviewState.configured) {
+    checkLatestUpdate(true);
     return;
   }
   if (updatePreviewState.status === 'ready') {
