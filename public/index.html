@@ -25853,6 +25853,15 @@ function initUpdatePreview() {
   setTimeout(startUpdateIconBreathing, 760);
 }
 
+function scheduleUpdatePreviewRefresh() {
+  setTimeout(initUpdatePreview, 1800);
+  setTimeout(checkLatestUpdate, 9000);
+  setInterval(checkLatestUpdate, 10 * 60 * 1000);
+  window.addEventListener('focus', function(){
+    checkLatestUpdate();
+  });
+}
+
 function setUpdatePreviewVisible(visible) {
   updatePreviewState.visible = !!visible;
   var entry = document.getElementById('update-entry');
@@ -30097,7 +30106,7 @@ safeRenderQueuePanel('startup');
 updateCustomCoverButton();
 updateCustomLyricControls();
 updateLikeButtons();
-setTimeout(initUpdatePreview, 9000);
+scheduleUpdatePreviewRefresh();
 
 // ============================================================
 //  主循环

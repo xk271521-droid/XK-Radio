@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.4 - 2026-07-10
+
+- Made the in-app update entry appear sooner and refresh again when the window regains focus.
+- Added a retry check so newly published releases are discovered without restarting immediately.
+
 ## 1.1.3 - 2026-07-10
 
 - Published a test update release for verifying in-app update detection.
