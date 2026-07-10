@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 - 2026-07-10
+
+- Published the latest XK Radio desktop app update.
+- Added product and design assets for the refreshed release package.
+- Updated desktop, server, and player UI behavior from the latest main branch.
+
 ## 1.1.1-xk.1 - 2026-07-06
 
 - Rebranded the desktop app as XK Radio / 小K电台.
