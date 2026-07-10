@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.6 - 2026-07-10
+
+- Added a pause / continue control for full installer update downloads.
+- Added update download pause and resume endpoints.
+
 ## 1.1.5 - 2026-07-10
 
 - Published a test release for verifying update detection from v1.1.4.

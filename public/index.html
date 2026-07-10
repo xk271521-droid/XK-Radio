@@ -586,7 +586,7 @@ body.desktop-shell.desktop-fullscreen .home-mosaic-cell.has-cover,html:fullscree
 .update-item-dot{width:auto;height:auto;margin:0;border-radius:0;background:transparent;box-shadow:none;flex-shrink:0;font-size:10px;font-weight:760;letter-spacing:.08em;color:rgba(244,210,138,.58);font-variant-numeric:tabular-nums}
 .update-item-dot::before{content:attr(data-index)}
 .update-item-text{font-size:13px;font-weight:560;line-height:1.45;color:rgba(255,255,255,.76)}
-.update-actions{display:grid;grid-template-columns:1fr 76px;gap:10px;align-items:center;padding-top:0}
+.update-actions{display:grid;grid-template-columns:1fr 76px 76px;gap:10px;align-items:center;padding-top:0}
 .update-primary-btn{position:relative;height:44px;border-radius:13px;border:1px solid rgba(244,210,138,.34);background:rgba(244,210,138,.105);color:rgba(255,244,214,.96);font-family:inherit;font-size:13px;font-weight:760;letter-spacing:.2px;cursor:pointer;overflow:hidden;box-shadow:0 14px 36px rgba(0,0,0,.28),0 0 22px rgba(244,210,138,.060),inset 0 1px 0 rgba(255,255,255,.10);transition:background .22s,border-color .22s,transform .22s,color .22s,box-shadow .22s}
 .update-primary-btn:hover{border-color:rgba(244,210,138,.58);background:rgba(244,210,138,.15);box-shadow:0 16px 42px rgba(0,0,0,.30),0 0 28px rgba(244,210,138,.11),inset 0 1px 0 rgba(255,255,255,.12);transform:translateY(-1px)}
 .update-primary-btn:disabled{cursor:default;transform:none;color:rgba(255,255,255,.64);border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.045)}
@@ -594,6 +594,8 @@ body.desktop-shell.desktop-fullscreen .home-mosaic-cell.has-cover,html:fullscree
 .update-btn-label{position:relative;z-index:1}
 .update-secondary-btn{height:44px;padding:0;border-radius:13px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.035);color:rgba(255,255,255,.55);font-family:inherit;font-size:12px;cursor:pointer;transition:background .18s,border-color .18s,color .18s,transform .18s}
 .update-secondary-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.82);transform:translateY(-1px)}
+.update-pause-btn{display:none}
+.update-pause-btn.show{display:block}
 .update-footnote{display:block;margin-top:12px;min-height:17px;font-size:11.5px;line-height:1.45;color:rgba(255,244,214,.54)}
 .modal.update-modal.ready .update-primary-btn{border-color:rgba(244,210,138,.46);background:rgba(244,210,138,.13);color:#fff0bf}
 .modal.update-modal.error .update-primary-btn{border-color:rgba(255,190,126,.46);background:rgba(255,158,86,.12);color:#ffe3c2}
@@ -2911,6 +2913,7 @@ body.stage-lyrics-scroll-mode #stage-lyrics{display:block}
           <span id="update-btn-fill" class="update-btn-fill"></span>
           <span id="update-btn-label" class="update-btn-label">立即更新</span>
         </button>
+        <button id="update-pause-btn" class="update-secondary-btn update-pause-btn" type="button" onclick="toggleUpdateDownloadPause()">暂停</button>
         <button class="update-secondary-btn" type="button" onclick="closeUpdatePanel()">取消</button>
       </div>
       <div id="update-footnote" class="update-footnote">预览版只演示更新手感，不会真的下载安装。</div>
@@ -3124,6 +3127,8 @@ var updatePreviewState = {
   sourceLabel: '',
   attempt: 0,
   attempts: 0,
+  pausable: false,
+  resumable: false,
   errorReason: '',
   errorDetail: '',
   failedAttempts: [],
@@ -9370,7 +9375,7 @@ function makeLyricReadabilityMaterial(mask, texture) {
       '  float p = clamp((uv.x - uTextMin) / denom, 0.0, 1.0);',
       '  float filled = 1.0 - smoothstep(uProgress, uProgress + uFeather, p);',
       '  vec4 tex = texture2D(uMap, uv);',
-      '  float alpha = tex.a * uOpacity;',
+      '  float alpha = tex.a * uOpacity * filled;',
       '  if(alpha < 0.006) discard;',
       '  gl_FragColor = vec4(tex.rgb, alpha);',
       '}'
@@ -9618,7 +9623,7 @@ function makeLyricShaderMaterial(mask, pal, effectPreset) {
       '  float mask = max(maskCore, max(max(maskR, maskB) * prismAmt * 0.62, maskGlitch * glitchAmt * 0.70));',
       '  float solid = smoothstep(0.08, 0.32, maskCore);',
       '  float sung = clamp(filled, 0.0, 1.0);',
-      '  float fillAlpha = max(mask, solid * 0.98);',
+      '  float fillAlpha = max(mask, solid * 0.98) * sung;',
       '  float totalAlpha = clamp(fillAlpha, 0.0, 1.0);',
       '  if(totalAlpha < 0.006) discard;',
       '  vec3 fillColor = mix(uBaseColor, uHiColor, sung);',
@@ -25964,6 +25969,7 @@ function syncUpdatePreviewStateClass() {
   var isReady = updatePreviewState.status === 'ready';
   var isError = updatePreviewState.status === 'error';
   var isOpening = updatePreviewState.status === 'opening';
+  var isPaused = updatePreviewState.status === 'paused';
   var isPatch = updatePreviewState.mode === 'patch';
   if (entry) {
     entry.classList.toggle('downloading', isDownloading || isOpening);
@@ -25975,10 +25981,12 @@ function syncUpdatePreviewStateClass() {
   }
   var label = document.getElementById('update-btn-label');
   var btn = document.getElementById('update-primary-btn');
+  var pauseBtn = document.getElementById('update-pause-btn');
   var canDownloadUpdate = updatePreviewState.configured && updatePreviewState.updateAvailable && updatePreviewState.downloadUrl;
   var canOpenRelease = updatePreviewState.configured && updatePreviewState.updateAvailable && !updatePreviewState.downloadUrl && updatePreviewState.releaseUrl;
   if (label) {
     if (isDownloading) label.textContent = (isPatch ? '快速补丁 ' : '正在下载 ') + Math.round(updatePreviewState.progress) + '%';
+    else if (isPaused) label.textContent = '下载已暂停';
     else if (isOpening) label.textContent = '正在打开安装包';
     else if (isError && updatePreviewState.mode === 'patch' && updatePreviewState.downloadUrl) label.textContent = '下载完整安装包';
     else if (isError) label.textContent = updatePreviewState.mode === 'installer' ? '重试下载' : '重试更新';
@@ -25990,9 +25998,16 @@ function syncUpdatePreviewStateClass() {
     else label.textContent = updatePreviewState.patchAvailable ? '安装快速补丁' : ((canDownloadUpdate || canOpenRelease) ? '下载完整安装包' : '立即更新');
   }
   if (btn) btn.disabled = false;
+  if (pauseBtn) {
+    var showPause = updatePreviewState.mode === 'installer' && (isDownloading || isPaused || updatePreviewState.pausable || updatePreviewState.resumable);
+    pauseBtn.classList.toggle('show', !!showPause);
+    pauseBtn.textContent = isPaused || updatePreviewState.resumable ? '继续' : '暂停';
+    pauseBtn.disabled = isOpening || isReady;
+  }
   var foot = document.getElementById('update-footnote');
   if (foot) {
     if (isDownloading) foot.textContent = (updatePreviewState.message || (isPatch ? '正在下载快速补丁' : '正在下载完整安装包')) + (updateProgressDetailText() ? ' · ' + updateProgressDetailText() : '');
+    else if (isPaused) foot.textContent = '下载已暂停。点击“继续”会重新连接下载线路。';
     else if (isError) foot.textContent = '下载失败：' + (updatePreviewState.errorReason || updatePreviewState.errorDetail || updatePreviewState.message || '请稍后重试') + (updatePreviewState.failedAttempts && updatePreviewState.failedAttempts.length ? ' · 已尝试 ' + updatePreviewState.failedAttempts.length + ' 条线路' : '');
     else if (isReady && isPatch) foot.textContent = updatePreviewState.restartRequired ? '快速补丁已应用，重启 XK Radio 后生效。' : '快速补丁已应用。';
     else if (isReady) foot.textContent = updatePreviewState.cached ? '已复用上次校验通过的安装包，不会重复下载。' : '安装包已准备好，点击按钮后再打开安装。';
@@ -26081,6 +26096,8 @@ async function startRealUpdateDownload() {
   updatePreviewState.sourceLabel = '';
   updatePreviewState.attempt = 0;
   updatePreviewState.attempts = 0;
+  updatePreviewState.pausable = false;
+  updatePreviewState.resumable = false;
   updatePreviewState.errorReason = '';
   updatePreviewState.errorDetail = '';
   updatePreviewState.failedAttempts = [];
@@ -26183,6 +26200,27 @@ async function pollUpdatePatchJob(id) {
   }
 }
 
+async function toggleUpdateDownloadPause() {
+  if (updatePreviewState.mode !== 'installer' || !updatePreviewState.downloadJobId) return;
+  var paused = updatePreviewState.status === 'paused' || updatePreviewState.resumable;
+  var endpoint = paused ? '/api/update/download/resume' : '/api/update/download/pause';
+  try {
+    var job = await apiJson(endpoint + '?id=' + encodeURIComponent(updatePreviewState.downloadJobId), { method: 'POST' });
+    applyUpdateDownloadJob(job);
+    if (paused && job && job.id) {
+      if (updatePreviewState.pollTimer) clearInterval(updatePreviewState.pollTimer);
+      updatePreviewState.pollTimer = setInterval(function(){
+        pollUpdateDownloadJob(job.id);
+      }, 360);
+      showToast('已继续下载更新');
+    } else {
+      showToast('已暂停更新下载');
+    }
+  } catch (e) {
+    showToast((paused ? '继续下载失败：' : '暂停下载失败：') + ((e && e.message) || '请稍后重试'));
+  }
+}
+
 function applyUpdateDownloadJob(job) {
   if (!job || job.ok === false || job.status === 'error') {
     if (updatePreviewState.pollTimer) clearInterval(updatePreviewState.pollTimer);
@@ -26193,9 +26231,11 @@ function applyUpdateDownloadJob(job) {
     updatePreviewState.speedBps = Number(job && job.speedBps || 0);
     updatePreviewState.etaSeconds = Number(job && job.etaSeconds || 0);
     updatePreviewState.sourceLabel = (job && job.sourceLabel) || updatePreviewState.sourceLabel || '';
-    updatePreviewState.attempt = Number(job && job.attempt || 0);
-    updatePreviewState.attempts = Number(job && job.attempts || 0);
-    updatePreviewState.errorReason = (job && (job.errorReason || job.message || job.error)) || '请稍后重试';
+  updatePreviewState.attempt = Number(job && job.attempt || 0);
+  updatePreviewState.attempts = Number(job && job.attempts || 0);
+  updatePreviewState.pausable = !!(job && job.pausable);
+  updatePreviewState.resumable = !!(job && job.resumable);
+  updatePreviewState.errorReason = (job && (job.errorReason || job.message || job.error)) || '请稍后重试';
     updatePreviewState.errorDetail = (job && job.errorDetail) || '';
     updatePreviewState.failedAttempts = Array.isArray(job && job.failedAttempts) ? job.failedAttempts : [];
     updatePreviewState.message = (job && job.message) || updatePreviewState.errorReason;
@@ -26219,6 +26259,8 @@ function applyUpdateDownloadJob(job) {
   updatePreviewState.sourceLabel = job.sourceLabel || '';
   updatePreviewState.attempt = Number(job.attempt || 0);
   updatePreviewState.attempts = Number(job.attempts || 0);
+  updatePreviewState.pausable = !!job.pausable;
+  updatePreviewState.resumable = !!job.resumable;
   updatePreviewState.errorReason = job.errorReason || '';
   updatePreviewState.errorDetail = job.errorDetail || '';
   updatePreviewState.failedAttempts = Array.isArray(job.failedAttempts) ? job.failedAttempts : [];
@@ -26228,6 +26270,13 @@ function applyUpdateDownloadJob(job) {
   if (job.status === 'downloading' || job.status === 'queued') {
     updatePreviewState.status = 'downloading';
     updateUpdatePreviewProgress(job.progress || 0);
+    return;
+  }
+  if (job.status === 'paused') {
+    if (updatePreviewState.pollTimer) clearInterval(updatePreviewState.pollTimer);
+    updatePreviewState.pollTimer = null;
+    updatePreviewState.status = 'paused';
+    updateUpdatePreviewProgress(job.progress || updatePreviewState.progress || 0);
     return;
   }
   if (job.status === 'ready') {

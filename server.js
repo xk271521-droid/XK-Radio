@@ -823,13 +823,15 @@ function publicUpdateJob(job) {
     errorReason: job.errorReason || '',
     errorDetail: job.errorDetail || '',
     failedAttempts: Array.isArray(job.failedAttempts) ? job.failedAttempts.slice(0, 6) : [],
+    pausable: job.mode === 'installer' && (job.status === 'queued' || job.status === 'downloading'),
+    resumable: job.mode === 'installer' && job.status === 'paused',
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };
 }
 function activeUpdateJobFor(version) {
   const jobs = Array.from(updateDownloadJobs.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  return jobs.find(job => job.version === version && (job.status === 'queued' || job.status === 'downloading' || job.status === 'ready'));
+  return jobs.find(job => job.version === version && (job.status === 'queued' || job.status === 'downloading' || job.status === 'paused' || job.status === 'ready'));
 }
 function trimUpdateJobs() {
   const jobs = Array.from(updateDownloadJobs.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -927,6 +929,7 @@ function verifyUpdateBuffer(buffer, job) {
       throw updateError('UPDATE_SHA512_MISMATCH', 'Downloaded sha512 mismatch');
     }
   }
+  job.running = false;
 }
 function verifyUpdateFile(filePath, job) {
   verifyUpdateBuffer(fs.readFileSync(filePath), job);
@@ -1020,6 +1023,9 @@ async function downloadUpdateAssetWithMirrors(job) {
     ? job.downloadCandidates
     : uniqueDownloadCandidates(job.downloadUrl || '');
   const failures = [];
+  if (job.running) return;
+  job.running = true;
+  job.pauseRequested = false;
   fs.mkdirSync(UPDATE_DOWNLOAD_DIR, { recursive: true });
   for (let i = 0; i < candidates.length; i++) {
     const candidate = candidates[i];
@@ -1029,9 +1035,18 @@ async function downloadUpdateAssetWithMirrors(job) {
       prepareUpdateJobAttempt(job, candidate, i, candidates.length);
       job.message = job.total ? '正在下载完整安装包' : '正在下载完整安装包，等待服务器返回大小';
 
-      const resp = await fetchWithTimeout(candidate.url, {
-        headers: { 'User-Agent': `XKRadio/${APP_VERSION}` },
-      }, 14000);
+      const controller = new AbortController();
+      job.abortController = controller;
+      const timeout = setTimeout(() => controller.abort(), 14000);
+      let resp;
+      try {
+        resp = await fetch(candidate.url, {
+          signal: controller.signal,
+          headers: { 'User-Agent': `XKRadio/${APP_VERSION}` },
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
       if (!resp.ok) throw updateError('HTTP_' + resp.status, 'HTTP ' + resp.status);
 
       const totalHeader = parseInt(resp.headers.get('content-length') || '0', 10) || 0;
@@ -1045,8 +1060,10 @@ async function downloadUpdateAssetWithMirrors(job) {
       const reader = resp.body.getReader();
       try {
         while (true) {
+          if (job.pauseRequested) throw updateError('UPDATE_PAUSED', 'Update download paused');
           const chunk = await reader.read();
           if (chunk.done) break;
+          if (job.pauseRequested) throw updateError('UPDATE_PAUSED', 'Update download paused');
           const buf = Buffer.from(chunk.value);
           job.received += buf.length;
           speedWindowBytes += buf.length;
@@ -1080,9 +1097,23 @@ async function downloadUpdateAssetWithMirrors(job) {
       job.etaSeconds = 0;
       job.message = '安装包已下载';
       job.updatedAt = Date.now();
+      job.running = false;
       return;
     } catch (err) {
       try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (_) {}
+      if (job.pauseRequested) {
+        job.status = 'paused';
+        job.speedBps = 0;
+        job.etaSeconds = 0;
+        job.message = '下载已暂停';
+        job.updatedAt = Date.now();
+        job.running = false;
+        if (job.resumeAfterPause) {
+          job.resumeAfterPause = false;
+          resumeUpdateDownloadJob(job.id);
+        }
+        return;
+      }
       const info = classifyUpdateError(err);
       failures.push({ source: candidate.label || '下载线路', reason: info.reason, detail: info.detail });
       job.failedAttempts = failures.slice(-6);
@@ -1091,6 +1122,43 @@ async function downloadUpdateAssetWithMirrors(job) {
       if (i >= candidates.length - 1) setUpdateJobError(job, err, '下载失败：' + info.reason);
     }
   }
+}
+function pauseUpdateDownloadJob(id) {
+  const job = updateDownloadJobs.get(id || '');
+  if (!job) return { ok: false, error: 'UPDATE_JOB_NOT_FOUND' };
+  if (job.mode !== 'installer') return { ok: false, error: 'UPDATE_PAUSE_UNSUPPORTED' };
+  if (job.status === 'paused') return publicUpdateJob(job);
+  if (job.status !== 'queued' && job.status !== 'downloading') return { ok: false, error: 'UPDATE_NOT_PAUSABLE' };
+  job.pauseRequested = true;
+  job.status = 'paused';
+  job.speedBps = 0;
+  job.etaSeconds = 0;
+  job.message = '下载已暂停';
+  job.updatedAt = Date.now();
+  try { if (job.abortController) job.abortController.abort(); } catch (_) {}
+  return publicUpdateJob(job);
+}
+function resumeUpdateDownloadJob(id) {
+  const job = updateDownloadJobs.get(id || '');
+  if (!job) return { ok: false, error: 'UPDATE_JOB_NOT_FOUND' };
+  if (job.mode !== 'installer') return { ok: false, error: 'UPDATE_RESUME_UNSUPPORTED' };
+  if (job.status !== 'paused') return publicUpdateJob(job);
+  if (job.running) {
+    job.resumeAfterPause = true;
+    job.message = '正在准备继续下载';
+    job.updatedAt = Date.now();
+    return publicUpdateJob(job);
+  }
+  job.pauseRequested = false;
+  job.status = 'queued';
+  job.received = 0;
+  job.progress = 0;
+  job.speedBps = 0;
+  job.etaSeconds = 0;
+  job.message = '正在继续下载完整安装包';
+  job.updatedAt = Date.now();
+  setTimeout(() => downloadUpdateAssetWithMirrors(job), 80);
+  return publicUpdateJob(job);
 }
 function startUpdateDownloadJob(info) {
   const release = info && info.release ? info.release : {};
@@ -5238,6 +5306,20 @@ const server = http.createServer(async (req, res) => {
       ? updateDownloadJobs.get(id)
       : Array.from(updateDownloadJobs.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
     sendJSON(res, publicUpdateJob(job), job ? 200 : 404);
+    return;
+  }
+
+  if (pn === '/api/update/download/pause') {
+    const id = url.searchParams.get('id') || '';
+    const job = pauseUpdateDownloadJob(id);
+    sendJSON(res, job, job.ok ? 200 : 400);
+    return;
+  }
+
+  if (pn === '/api/update/download/resume') {
+    const id = url.searchParams.get('id') || '';
+    const job = resumeUpdateDownloadJob(id);
+    sendJSON(res, job, job.ok ? 200 : 400);
     return;
   }
 
