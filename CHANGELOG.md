@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 - 2026-07-10
+
+- Published a test update release for verifying in-app update detection.
+- Includes the latest local player UI changes.
+
 ## 1.1.2 - 2026-07-10
 
 - Published the latest XK Radio desktop app update.

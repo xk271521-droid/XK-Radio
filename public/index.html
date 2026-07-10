@@ -9370,7 +9370,7 @@ function makeLyricReadabilityMaterial(mask, texture) {
       '  float p = clamp((uv.x - uTextMin) / denom, 0.0, 1.0);',
       '  float filled = 1.0 - smoothstep(uProgress, uProgress + uFeather, p);',
       '  vec4 tex = texture2D(uMap, uv);',
-      '  float alpha = tex.a * uOpacity * filled;',
+      '  float alpha = tex.a * uOpacity;',
       '  if(alpha < 0.006) discard;',
       '  gl_FragColor = vec4(tex.rgb, alpha);',
       '}'
@@ -9618,7 +9618,7 @@ function makeLyricShaderMaterial(mask, pal, effectPreset) {
       '  float mask = max(maskCore, max(max(maskR, maskB) * prismAmt * 0.62, maskGlitch * glitchAmt * 0.70));',
       '  float solid = smoothstep(0.08, 0.32, maskCore);',
       '  float sung = clamp(filled, 0.0, 1.0);',
-      '  float fillAlpha = max(mask, solid * 0.98) * sung;',
+      '  float fillAlpha = max(mask, solid * 0.98);',
       '  float totalAlpha = clamp(fillAlpha, 0.0, 1.0);',
       '  if(totalAlpha < 0.006) discard;',
       '  vec3 fillColor = mix(uBaseColor, uHiColor, sung);',
@@ -10680,16 +10680,10 @@ function updateStageLyrics3D(dt) {
         data.sun.rotation.z += Math.sin(t * 0.32 + seed) * 0.010 * sunPulse;
       }
       var mainTextFactor = tickLyricCharFx(data, mesh, true, opacity, mesh.userData.lastLyricProgress, t, stageLyrics.beatGlow, bass, false);
-      var charFxBaseHidden = !!(data.charFx && data.charFx.group && data.charFx.chars && data.charFx.chars.length);
-      if (data.textMesh) data.textMesh.visible = !charFxBaseHidden;
+      if (data.textMesh) data.textMesh.visible = true;
       if (data.textMat && data.textMat.uniforms.uOpacity) data.textMat.uniforms.uOpacity.value = opacity * mainTextFactor;
-      if (charFxBaseHidden) {
-        if (data.glowMat) data.glowMat.opacity = 0;
-        if (data.readabilityMat) setLyricReadabilityOpacity(data, 0);
-      } else {
-        if (mainTextFactor < 1 && data.glowMat) data.glowMat.opacity *= 0.54;
-        if (mainTextFactor < 1 && data.readabilityMat) setLyricReadabilityOpacity(data, Math.max(getLyricReadabilityOpacity(data), Math.min(1, opacity * 0.94)));
-      }
+      if (mainTextFactor < 1 && data.glowMat) data.glowMat.opacity *= 0.54;
+      if (mainTextFactor < 1 && data.readabilityMat) setLyricReadabilityOpacity(data, Math.max(getLyricReadabilityOpacity(data), Math.min(1, opacity * 0.94)));
       var effectFloat = lyricMotion.float == null ? 1 : lyricMotion.float;
       var effectRoll = lyricMotion.roll == null ? 1 : lyricMotion.roll;
       var lyricScalePulse = bass * (lyricMotion.bass || 0.038) + beatPulse * (lyricMotion.beat || 0.014);
@@ -10746,16 +10740,10 @@ function updateStageLyrics3D(dt) {
     }
     if (data.sunMat) data.sunMat.opacity = lyricGlowStrength > 0 && !shelfDetailOpen ? opacity * 0.08 * lyricGlowStrength : 0;
     var outgoingMainFactor = tickLyricCharFx(data, mesh, false, opacity, mesh.userData.lastLyricProgress, t, stageLyrics.beatGlow, bass, true);
-    var outgoingCharFxBaseHidden = !!(data.charFx && data.charFx.group && data.charFx.chars && data.charFx.chars.length);
-    if (data.textMesh) data.textMesh.visible = !outgoingCharFxBaseHidden;
+    if (data.textMesh) data.textMesh.visible = true;
     if (data.textMat && data.textMat.uniforms.uOpacity) data.textMat.uniforms.uOpacity.value = opacity * outgoingMainFactor;
-    if (outgoingCharFxBaseHidden) {
-      if (data.glowMat) data.glowMat.opacity = 0;
-      if (data.readabilityMat) setLyricReadabilityOpacity(data, 0);
-    } else {
-      if (outgoingMainFactor < 1 && data.glowMat) data.glowMat.opacity *= 0.48;
-      if (outgoingMainFactor < 1 && data.readabilityMat) setLyricReadabilityOpacity(data, Math.max(getLyricReadabilityOpacity(data), Math.min(1, opacity * 0.76)));
-    }
+    if (outgoingMainFactor < 1 && data.glowMat) data.glowMat.opacity *= 0.48;
+    if (outgoingMainFactor < 1 && data.readabilityMat) setLyricReadabilityOpacity(data, Math.max(getLyricReadabilityOpacity(data), Math.min(1, opacity * 0.76)));
     mesh.position.z -= dt * 0.26;
     mesh.position.y += dt * 0.08;
     mesh.scale.setScalar(0.98 - a * 0.06);
