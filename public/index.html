@@ -65,15 +65,17 @@ body.desktop-shell #desktop-titlebar #user-btn{height:30px;min-height:30px;borde
 body.desktop-shell #desktop-titlebar #user-btn.logged-out{height:30px;min-width:42px;padding:0 10px;border-radius:10px;font-size:11px;letter-spacing:.04em}
 body.desktop-shell #desktop-titlebar #user-btn.logged-in{height:30px;padding:0 10px 0 3px;border-radius:10px}
 body.desktop-shell #desktop-titlebar #user-avatar{width:24px;height:24px}
-body.desktop-shell #desktop-titlebar #visual-guide-btn,
-body.desktop-shell #desktop-titlebar #update-entry{width:30px;height:30px;border-radius:10px;box-shadow:none;background:rgba(4,8,10,.42);border-color:rgba(255,255,255,.08);color:rgba(224,250,255,.70);backdrop-filter:none;-webkit-backdrop-filter:none}
+body.desktop-shell #desktop-titlebar #visual-guide-btn{width:30px;height:30px;border-radius:10px;box-shadow:none;background:rgba(4,8,10,.42);border-color:rgba(255,255,255,.08);color:rgba(224,250,255,.70);backdrop-filter:none;-webkit-backdrop-filter:none}
+body.desktop-shell #desktop-titlebar #update-entry{width:32px;height:30px;padding:0;border:1px solid rgba(127,216,255,.28);border-radius:10px;background:linear-gradient(180deg,rgba(16,24,30,.66),rgba(3,7,10,.46));color:rgba(190,236,255,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);backdrop-filter:none;-webkit-backdrop-filter:none}
 body.desktop-shell #desktop-titlebar #visual-guide-btn{font-size:14px}
 body.desktop-shell #desktop-titlebar #update-entry.available{display:flex}
-body.desktop-shell #desktop-titlebar #update-entry svg{width:18px;height:18px}
+body.desktop-shell #desktop-titlebar #update-entry svg{width:16px;height:16px}
 body.desktop-shell #desktop-titlebar #update-entry::before,
 body.desktop-shell #desktop-titlebar #update-entry::after{display:none}
-body.desktop-shell #desktop-titlebar #visual-guide-btn:hover,
-body.desktop-shell #desktop-titlebar #update-entry:hover{background:rgba(255,83,103,.10);border-color:rgba(255,83,103,.32);color:#fff;transform:translateY(-1px)}
+body.desktop-shell #desktop-titlebar #visual-guide-btn:hover{background:rgba(255,83,103,.10);border-color:rgba(255,83,103,.32);color:#fff;transform:translateY(-1px)}
+body.desktop-shell #desktop-titlebar #update-entry:hover,
+body.desktop-shell #desktop-titlebar #update-entry.ready{transform:translateY(-1px);color:#fff;border-color:rgba(127,216,255,.58);background:linear-gradient(180deg,rgba(30,58,72,.72),rgba(4,11,16,.54));box-shadow:0 10px 24px rgba(0,0,0,.24),0 0 18px rgba(127,216,255,.11),inset 0 1px 0 rgba(255,255,255,.14)}
+body.desktop-shell #desktop-titlebar #update-entry:active{transform:translateY(0) scale(.97)}
 body.desktop-shell #search-area{top:-92px}
 body.desktop-shell #search-area.peek{top:7px}
 body.desktop-shell #search-area.stage-mode.peek{top:7px}
@@ -1376,10 +1378,10 @@ body.settings-overlay-active.desktop-shell.diy-mode #fx-panel.peek{left:50%!impo
 #lyric-effect-preset-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:hidden}
 #lyric-effect-preset-seg button{min-height:33px;border-right:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #lyric-effect-preset-seg button:nth-child(3n){border-right:none}
-#lyric-effect-preset-seg button:nth-last-child(-n+3){border-bottom:none}
 #lyric-effect-preset-seg button:last-child{grid-column:1/-1;border-right:none;border-bottom:none}
-#lyric-effect-preset-seg button:nth-last-child(-n+3){border-bottom:1px solid rgba(255,255,255,.05)}
-#lyric-effect-preset-seg button:last-child{border-bottom:none}
+.lyric-effect-preview-row{display:flex;align-items:center;gap:10px;margin:-1px 0 12px}
+.lyric-effect-preview-row .fx-mini-btn{min-width:118px}
+.lyric-effect-preview-row span{font-size:10.5px;color:rgba(255,255,255,.44);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #lyric-color-style-seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:hidden}
 #lyric-color-style-seg button{min-height:32px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
@@ -1518,6 +1520,13 @@ body.settings-overlay-active.desktop-shell.diy-mode #fx-panel.peek{left:50%!impo
 .pl-detail-row-title{font-size:11.5px;font-weight:650;color:rgba(255,255,255,.86);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pl-detail-row-artist{display:inline-flex;max-width:100%;border:0;background:transparent;color:rgba(var(--fc-accent-rgb),.68);font:500 10.5px var(--font-sans);padding:0;margin-top:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pl-detail-row-artist:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.pl-provider-alert{display:flex;align-items:flex-start;gap:10px;margin:0 0 7px;padding:10px;border-radius:11px;border:1px solid rgba(255,206,112,.18);background:rgba(255,206,112,.055)}
+.pl-provider-alert.kugou{border-color:rgba(90,166,255,.22);background:rgba(90,166,255,.060)}
+.pl-provider-alert-main{flex:1;min-width:0}
+.pl-provider-alert-title{font-size:11.5px;font-weight:760;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-provider-alert-body{margin-top:4px;font-size:10.5px;line-height:1.45;color:rgba(255,255,255,.60)}
+.pl-provider-alert-detail{margin-top:5px;font-size:10px;line-height:1.35;color:rgba(255,255,255,.38);word-break:break-word}
+.pl-provider-alert-retry{height:28px;min-width:52px;flex:0 0 auto;padding:0 10px}
 .pl-card.expanded{border-color:rgba(var(--fc-accent-rgb),.32);background:rgba(var(--fc-accent-rgb),.060)}
 .pl-card.podcast-card{border-color:rgba(0,245,212,.075);background:rgba(0,245,212,.030)}
 .pl-card.podcast-card:hover{border-color:rgba(0,245,212,.20);background:rgba(0,245,212,.070)}
@@ -1610,6 +1619,8 @@ html.control-glass-svg-ok .icon-btn,html.control-glass-svg-ok #fx-fab,html.contr
 #playlist-panel .qi-act button.queue-next:hover{background:rgba(var(--fc-accent-rgb),.14)!important;color:#fff!important}
 #playlist-panel .song-action-btn.action-unsupported,#playlist-panel .qi-act button.action-unsupported{opacity:.38!important;color:rgba(255,255,255,.34)!important;background:rgba(255,255,255,.03)!important;border-color:rgba(255,255,255,.07)!important;box-shadow:none!important}
 #playlist-panel .song-action-btn.action-unsupported:hover,#playlist-panel .qi-act button.action-unsupported:hover{color:rgba(255,255,255,.46)!important;background:rgba(255,255,255,.035)!important;border-color:rgba(255,255,255,.08)!important;transform:none!important}
+body.shelf-tunnel-active #canvas-container canvas{cursor:grab}
+body.shelf-tunnel-active.shelf-tunnel-dragging #canvas-container canvas{cursor:grabbing}
 
 .home-card[data-home-tone],.home-tile[data-home-tone]{--tone-a:var(--home-accent);--tone-b:color-mix(in srgb,var(--home-accent) 58%,#2442ff);--tone-c:color-mix(in srgb,var(--home-accent) 42%,#f8f4ee)}
 .home-hero{border-color:color-mix(in srgb,var(--home-accent) 34%,rgba(255,255,255,.085));background:linear-gradient(145deg,color-mix(in srgb,var(--home-accent) 18%,rgba(33,29,34,.64)),rgba(9,10,14,.76) 48%,color-mix(in srgb,var(--home-accent) 10%,rgba(17,20,25,.70)))}
@@ -1715,6 +1726,39 @@ html.control-glass-svg-ok #playlist-panel{
 @media (max-width:840px){.home-title.home-lead-title{max-width:none}.home-lead-sub{max-width:none}}
 @media (max-width:620px){.home-lead-actions{grid-template-columns:1fr 1fr}.home-lead-track{grid-template-columns:78px minmax(0,1fr);min-height:98px}.home-lead-cover{width:78px;height:78px}}
 @media (prefers-reduced-motion:reduce){.home-hero.home-lead-card::after,.home-lead-cover::before{animation:none!important}.home-hero-inner.home-lead-inner,.home-lead-track,.home-lead-btn{transition:none!important;transform:none!important}}
+
+/* Home signal stage: one responsive focal point, with motion reserved for intent and playback. */
+.home-lead-stage{position:absolute;z-index:1;right:-72px;bottom:-92px;width:250px;aspect-ratio:1;pointer-events:none;opacity:.72;transform:translate3d(0,0,0);transition:opacity .22s cubic-bezier(.16,1,.3,1),transform .32s cubic-bezier(.16,1,.3,1)}
+.home-lead-stage::before,.home-lead-stage::after{content:'';position:absolute;border-radius:50%;inset:18%;border:1px solid rgba(var(--home-accent-rgb),.20);box-shadow:0 0 0 18px rgba(var(--home-accent-rgb),.028),0 0 42px rgba(var(--home-accent-rgb),.16),inset 0 0 38px rgba(var(--home-accent-rgb),.06)}
+.home-lead-stage::after{inset:31%;border-color:rgba(244,210,138,.34);box-shadow:0 0 0 1px rgba(255,255,255,.10),0 0 30px rgba(244,210,138,.14);animation:home-stage-core 4.8s ease-in-out infinite}
+.home-lead-stage-ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,.10);border-right-color:rgba(var(--home-accent-rgb),.72);border-bottom-color:rgba(244,210,138,.56);box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);animation:home-stage-orbit 16s linear infinite}
+.home-lead-stage-ring::before,.home-lead-stage-ring::after{content:'';position:absolute;top:50%;left:50%;width:7px;height:7px;border-radius:50%;background:var(--home-accent);box-shadow:0 0 16px rgba(var(--home-accent-rgb),.82);transform:translate(-50%,-50%) translateX(122px)}
+.home-lead-stage-ring::after{width:5px;height:5px;background:#f4d28a;box-shadow:0 0 14px rgba(244,210,138,.72);transform:translate(-50%,-50%) translateX(-96px)}
+.home-lead-stage-wave{position:absolute;inset:22%;border-radius:50%;border:1px dashed rgba(var(--home-accent-rgb),.22);animation:home-stage-orbit 10s linear infinite reverse}
+.home-lead-card.is-interacting .home-lead-stage,.home-lead-card.is-live .home-lead-stage{opacity:1;transform:translate3d(-10px,-8px,0) scale(1.045)}
+.home-lead-card.is-interacting .home-lead-stage-ring,.home-lead-card.is-live .home-lead-stage-ring{animation-duration:7s}
+.home-lead-card.is-interacting .home-lead-stage::after,.home-lead-card.is-live .home-lead-stage::after{animation-duration:1.55s}
+@keyframes home-stage-orbit{to{transform:rotate(360deg)}}
+@keyframes home-stage-core{0%,100%{opacity:.48;transform:scale(.88)}50%{opacity:1;transform:scale(1.08)}}
+
+/* Each home destination has its own material response rather than sharing one generic hover. */
+.home-card{--home-card-spot-x:50%;--home-card-spot-y:50%;--home-card-tilt-x:0deg;--home-card-tilt-y:0deg;transform-style:preserve-3d;will-change:transform}
+.home-card::before{background:radial-gradient(circle at var(--home-card-spot-x) var(--home-card-spot-y),rgba(255,255,255,.20),rgba(var(--home-accent-rgb),.10) 20%,transparent 47%),linear-gradient(118deg,rgba(255,255,255,.055),transparent 28%,rgba(var(--home-accent-rgb),.11) 70%,transparent)!important;transition:opacity .18s ease}
+body.empty-home-active .home-card{animation:none}
+.home-card:hover,.home-card.is-interacting{transform:translateY(-3px) rotateX(var(--home-card-tilt-x)) rotateY(var(--home-card-tilt-y))!important}
+.home-card[data-home-action="library"] .home-card-art{box-shadow:10px 9px 0 rgba(var(--home-accent-rgb),.10),20px 18px 0 rgba(244,210,138,.05),0 18px 50px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.16);transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s cubic-bezier(.16,1,.3,1)}
+.home-card[data-home-action="library"]:hover .home-card-art{transform:rotate(-3deg) translate3d(-5px,-5px,18px);box-shadow:13px 11px 0 rgba(var(--home-accent-rgb),.18),26px 22px 0 rgba(244,210,138,.08),0 24px 56px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.20)}
+.home-card[data-home-action="daily"] .home-card-art{clip-path:polygon(0 0,100% 0,100% 100%,0 100%);transition:transform .22s cubic-bezier(.16,1,.3,1),clip-path .22s cubic-bezier(.16,1,.3,1),filter .22s}
+.home-card[data-home-action="daily"]:hover .home-card-art{clip-path:polygon(7% 0,100% 0,93% 100%,0 100%);transform:rotate(1.5deg) translate3d(-2px,-4px,16px);filter:saturate(1.22) brightness(1.08)}
+.home-card[data-home-action="continue"]:hover .home-card-art{transform:rotate(-2.5deg) translate3d(-4px,-6px,18px) scale(1.025);box-shadow:0 0 0 1px rgba(var(--home-accent-rgb),.34),0 0 28px rgba(var(--home-accent-rgb),.18),0 22px 54px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.18)}
+.home-card[data-home-action="profile"]:hover .home-card-art{transform:rotate(6deg) translate3d(2px,-5px,18px);filter:contrast(1.06) saturate(1.14);box-shadow:0 0 0 1px rgba(244,210,138,.22),0 22px 52px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.18)}
+
+/* Destination handoff: the selected card carries the interaction into its panel. */
+body.home-transitioning #empty-home{opacity:.96;transform:translateX(-50%) scale(.988);transition:opacity .18s ease,transform .22s cubic-bezier(.16,1,.3,1)}
+body.home-transitioning .home-grid,body.home-transitioning .home-rail{opacity:0;transform:translate3d(0,10px,0);filter:blur(2px);transition:opacity .14s ease,transform .20s cubic-bezier(.16,1,.3,1),filter .16s ease}
+body.home-transitioning .home-transition-source{transform:translate3d(0,-4px,30px) scale(1.025)!important;filter:brightness(1.10);box-shadow:0 0 0 1px rgba(var(--home-accent-rgb),.30),0 0 38px rgba(var(--home-accent-rgb),.18)!important;transition:transform .20s cubic-bezier(.16,1,.3,1),filter .18s ease,box-shadow .18s ease}
+@media (max-width:840px){.home-lead-stage{right:-108px;bottom:-116px;opacity:.48}}
+@media (prefers-reduced-motion:reduce){.home-lead-stage,.home-lead-stage::after,.home-lead-stage-ring,.home-lead-stage-wave{animation:none!important}.home-lead-stage{display:none}.home-card,.home-card::before,.home-card-art,#empty-home,.home-grid,.home-rail{transition:none!important;transform:none!important;filter:none!important}}
 
 /* Final glass scope: keep SVG only on the search input and main chrome buttons. */
 #search-box{
@@ -2137,9 +2181,7 @@ body.stage-lyrics-scroll-mode #stage-lyrics{display:block}
   #lyric-effect-preset-seg{grid-template-columns:repeat(2,minmax(0,1fr))}
   #lyric-effect-preset-seg button:nth-child(3n){border-right:1px solid rgba(255,255,255,.05)}
   #lyric-effect-preset-seg button:nth-child(2n){border-right:none}
-  #lyric-effect-preset-seg button:nth-last-child(-n+3){border-bottom:1px solid rgba(255,255,255,.05)}
-  #lyric-effect-preset-seg button:nth-last-child(-n+2){border-bottom:none}
-  #lyric-effect-preset-seg button:nth-last-child(-n+2){border-bottom:1px solid rgba(255,255,255,.05)}
+  #lyric-effect-preset-seg button:nth-last-child(-n+1){border-bottom:1px solid rgba(255,255,255,.05)}
   #lyric-effect-preset-seg button:last-child{grid-column:1/-1;border-right:none;border-bottom:none}
   #lyric-color-style-seg{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -2162,7 +2204,7 @@ body.stage-lyrics-scroll-mode #stage-lyrics{display:block}
   </div>
   <div class="desktop-window-controls">
     <button id="visual-guide-btn" class="icon-btn" type="button" onclick="startVisualGuide({ manual: true })" title="查看使用引导" aria-label="查看使用引导">?</button>
-    <button id="update-entry" class="update-entry" type="button" onclick="openUpdatePanel()" title="发现新版本" aria-label="发现新版本">
+    <button id="update-entry" class="update-entry" type="button" onclick="openUpdatePanel()" title="检查更新" aria-label="检查更新">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle class="update-ring" cx="12" cy="12" r="8.8"></circle>
         <circle id="update-progress-ring" class="update-progress-ring" cx="12" cy="12" r="8.8"></circle>
@@ -2260,11 +2302,12 @@ body.stage-lyrics-scroll-mode #stage-lyrics{display:block}
   <div class="empty-home-shell">
     <div class="home-hero home-lead-card" id="home-lead-card">
       <div class="home-hero-inner home-lead-inner">
+        <div class="home-lead-stage" aria-hidden="true"><span class="home-lead-stage-ring"></span><span class="home-lead-stage-wave"></span></div>
         <div class="home-lead-copy">
           <div class="home-lead-kicker-row"><span class="home-lead-dot" aria-hidden="true"></span><span id="home-lead-kicker">XK Radio · Ready</span></div>
           <div class="home-title home-lead-title" id="home-lead-title">今日开播</div>
           <div class="home-lead-sub" id="home-lead-subtitle">从最近听过的歌或今日推荐直接进入播放。</div>
-          <button class="home-lead-track" type="button" onclick="playHomeLead()">
+          <button class="home-lead-track" type="button" onclick="return runHomeAction(this, playHomeLead)">
             <div class="home-lead-cover" id="home-lead-cover"></div>
             <div class="home-lead-track-copy">
               <div class="home-lead-track-label" id="home-lead-track-label">Ready Track</div>
@@ -2273,33 +2316,33 @@ body.stage-lyrics-scroll-mode #stage-lyrics{display:block}
             </div>
           </button>
           <div class="home-lead-actions">
-            <button class="home-lead-btn primary" type="button" onclick="playHomeLead()"><span class="home-lead-play-icon" aria-hidden="true"></span><span id="home-lead-primary-label">立即播放</span></button>
-            <button class="home-lead-btn" type="button" onclick="openHomeLibrary()">打开歌单</button>
+            <button class="home-lead-btn primary" type="button" onclick="return runHomeAction(this, playHomeLead)"><span class="home-lead-play-icon" aria-hidden="true"></span><span id="home-lead-primary-label">立即播放</span></button>
+            <button class="home-lead-btn" type="button" onclick="return runHomeAction(this, openHomeLibrary)">打开歌单</button>
           </div>
         </div>
       </div>
     </div>
 
     <div class="home-grid">
-      <button class="home-card" data-home-tone="library" type="button" onclick="openHomeLibrary()">
+      <button class="home-card" data-home-tone="library" data-home-action="library" type="button" onclick="return runHomeAction(this, openHomeLibrary)">
         <div class="home-card-label">Library</div>
         <div class="home-card-title" id="home-weather-card-title">我的歌单</div>
         <div class="home-card-sub" id="home-weather-card-sub">打开左侧歌单库</div>
         <div class="home-card-art" id="home-weather-art"></div>
       </button>
-      <button class="home-card" data-home-tone="mix" type="button" onclick="playHomeDaily()">
+      <button class="home-card" data-home-tone="mix" data-home-action="daily" type="button" onclick="return runHomeAction(this, playHomeDaily)">
         <div class="home-card-label">Daily</div>
         <div class="home-card-title" id="home-daily-title">每日推荐</div>
         <div class="home-card-sub" id="home-daily-sub">登录后同步你的今日歌曲</div>
         <div class="home-card-art" id="home-daily-art"></div>
       </button>
-      <button class="home-card" data-home-tone="mix" type="button" onclick="playHomeRecent()">
+      <button class="home-card" data-home-tone="mix" data-home-action="continue" type="button" onclick="return runHomeAction(this, playHomeRecent)">
         <div class="home-card-label">Continue</div>
         <div class="home-card-title" id="home-continue-title">继续听</div>
         <div class="home-card-sub" id="home-continue-sub">最近播放会出现在这里</div>
         <div class="home-card-art" id="home-continue-art"></div>
       </button>
-      <button class="home-card" data-home-tone="local" type="button" onclick="openHomeInsight()">
+      <button class="home-card" data-home-tone="local" data-home-action="profile" type="button" onclick="return runHomeAction(this, openHomeInsight)">
         <div class="home-card-label">Profile</div>
         <div class="home-card-title" id="home-profile-title">听歌画像</div>
         <div class="home-card-sub" id="home-profile-sub">播放几首后生成偏好</div>
@@ -2392,8 +2435,17 @@ body.stage-lyrics-scroll-mode #stage-lyrics{display:block}
         <button type="button" data-lyric-effect-preset="magnetic">磁吸拼字</button>
         <button type="button" data-lyric-effect-preset="decode">光幕翻牌</button>
         <button type="button" data-lyric-effect-preset="wave">声波跃迁</button>
+        <button type="button" data-lyric-effect-preset="shutter">镜头快门</button>
+        <button type="button" data-lyric-effect-preset="tape">磁带拖影</button>
+        <button type="button" data-lyric-effect-preset="fold">折叠字幕</button>
+        <button type="button" data-lyric-effect-preset="tunnel">穿梭隧道</button>
+        <button type="button" data-lyric-effect-preset="switcher">故障切台</button>
         <button type="button" data-lyric-effect-preset="mix">混合演出</button>
         <button type="button" data-lyric-effect-preset="custom">自定义</button>
+      </div>
+      <div class="lyric-effect-preview-row">
+        <button class="fx-mini-btn ghost" id="lyric-effect-preview-btn" type="button" onclick="toggleLyricEffectPreview()">试听 5 种动效</button>
+        <span id="lyric-effect-preview-status">不改变当前预设</span>
       </div>
       <div class="lyric-color-grid" id="lyric-color-grid"></div>
       <div class="lyric-color-row">
@@ -2494,6 +2546,7 @@ body.stage-lyrics-scroll-mode #stage-lyrics{display:block}
         <button type="button" data-shelf="off" onclick="setShelfMode('off')">关闭</button>
         <button type="button" data-shelf="side" onclick="setShelfMode('side')">固定右边</button>
         <button type="button" data-shelf="linked" onclick="setShelfMode('linked')">舞台联动</button>
+        <button type="button" data-shelf="tunnel" onclick="setShelfMode('tunnel')" title="拖拽旋转空间，滚轮穿行">空间隧道</button>
       </div>
       <div class="fx-seg" id="shelf-camera-seg">
         <button type="button" data-shelf-camera="dynamic" onclick="setShelfCameraMode('dynamic')">动态镜头</button>
@@ -2899,7 +2952,7 @@ body.stage-lyrics-scroll-mode #stage-lyrics{display:block}
       <div class="update-panel-head">
         <div>
           <div class="update-kicker">XK RADIO</div>
-          <div id="update-modal-title" class="update-title">New release</div>
+          <div id="update-modal-title" class="update-title">版本更新</div>
           <div id="update-modal-version" class="update-version">v1.0.10</div>
         </div>
       </div>
@@ -2998,6 +3051,7 @@ var AUDIO_FADE_IN_MS = 460;
 var AUDIO_FADE_OUT_MS = 420;
 var AUDIO_SILENCE_GAIN = 0.0001;
 var userPlaylists = [], qqPlaylists = [], myPodcastCollections = [], myPodcastItems = {}, playlistCoverCache = {};
+var playlistProviderStatus = { netease: null, qq: null, kugou: null, soda: null };
 var CUSTOM_COVER_STORE_KEY = 'mineradio-custom-covers';
 var CUSTOM_LYRIC_STORE_KEY = 'mineradio-custom-lyrics-v1';
 var CUSTOM_LYRIC_PREF_STORE_KEY = 'mineradio-custom-lyric-prefs-v1';
@@ -3702,8 +3756,8 @@ var PACKAGED_DEFAULT_FX_SNAPSHOT = Object.freeze({
   shelfAccentColor: '#ffffff',
   cam: 'off'
 });
-var LYRIC_EFFECT_PRESET_ORDER = ['classic', 'bounce', 'typewriter', 'magnetic', 'decode', 'wave', 'mix'];
-var LYRIC_EFFECT_MIX_POOL = ['bounce', 'typewriter', 'magnetic', 'decode', 'wave'];
+var LYRIC_EFFECT_PRESET_ORDER = ['classic', 'bounce', 'typewriter', 'magnetic', 'decode', 'wave', 'shutter', 'tape', 'fold', 'tunnel', 'switcher', 'mix'];
+var LYRIC_EFFECT_MIX_POOL = ['bounce', 'typewriter', 'magnetic', 'decode', 'wave', 'shutter', 'tape', 'fold', 'tunnel', 'switcher'];
 var LYRIC_EFFECT_PRESET_NAMES = {
   classic: '\u7ecf\u5178',
   bounce: '\u9010\u5b57\u5f39\u8df3',
@@ -3711,10 +3765,20 @@ var LYRIC_EFFECT_PRESET_NAMES = {
   magnetic: '\u78c1\u5438\u62fc\u5b57',
   decode: '\u5149\u5e55\u7ffb\u724c',
   wave: '\u58f0\u6ce2\u8dc3\u8fc1',
+  shutter: '\u955c\u5934\u5feb\u95e8',
+  tape: '\u78c1\u5e26\u62d6\u5f71',
+  fold: '\u6298\u53e0\u5b57\u5e55',
+  tunnel: '\u7a7f\u68ad\u96a7\u9053',
+  switcher: '\u6545\u969c\u5207\u53f0',
   mix: '\u6df7\u5408\u6f14\u51fa',
   custom: '\u81ea\u5b9a\u4e49'
 };
-var LYRIC_EFFECT_SHADER_INDEX = { classic:0, bounce:1, typewriter:2, magnetic:3, decode:4, wave:5 };
+var LYRIC_EFFECT_SHADER_INDEX = { classic:0, bounce:1, typewriter:2, magnetic:3, decode:4, wave:5, slice:6, prismburst:7, focus:8, shutter:9, tape:10, fold:11, tunnel:12, switcher:13 };
+var LYRIC_EFFECT_PREVIEW_PRESETS = ['shutter', 'tape', 'fold', 'tunnel', 'switcher'];
+var LYRIC_EFFECT_PREVIEW_NAMES = {
+  shutter:'镜头快门', tape:'磁带拖影', fold:'折叠字幕', tunnel:'穿梭隧道', switcher:'故障切台'
+};
+var lyricEffectPreview = { active:false, startedAt:0, index:-1, text:'耳机里有一整片星海', cycleSeconds:3.2, beat:0 };
 var LYRIC_EFFECT_PRESET_SETTINGS = {
   classic: {
     lyricDisplayMode:'single', lyricFont:'hei', lyricLetterSpacing:0, lyricLineHeight:1, lyricWeight:900,
@@ -3750,6 +3814,24 @@ var LYRIC_EFFECT_PRESET_SETTINGS = {
     lyricScale:1.06, lyricOffsetZ:0.12, lyricTiltX:-2, lyricTiltY:0,
     lyricGlowStrength:0.58, lyricGlow:true, lyricGlowBeat:true, lyricGlowParticles:false, lyricCameraLock:false,
     lyricColorMode:'auto', lyricHighlightMode:'custom', lyricHighlightColor:'#fff0b8', lyricGlowLinked:true
+  },
+  slice: {
+    lyricDisplayMode:'single', lyricFont:'display', lyricLetterSpacing:0.018, lyricLineHeight:1, lyricWeight:900,
+    lyricScale:1.08, lyricOffsetZ:0.20, lyricTiltX:-2, lyricTiltY:-3,
+    lyricGlowStrength:0.56, lyricGlow:true, lyricGlowBeat:true, lyricGlowParticles:false, lyricCameraLock:false,
+    lyricColorMode:'custom', lyricColor:'#f0fbff', lyricHighlightMode:'custom', lyricHighlightColor:'#7ffff0', lyricColorStyle:'beat', lyricGlowLinked:false, lyricGlowColor:'#ff4fd8'
+  },
+  prismburst: {
+    lyricDisplayMode:'single', lyricFont:'display', lyricLetterSpacing:0.014, lyricLineHeight:1, lyricWeight:900,
+    lyricScale:1.10, lyricOffsetZ:0.24, lyricTiltX:-4, lyricTiltY:5,
+    lyricGlowStrength:0.62, lyricGlow:true, lyricGlowBeat:true, lyricGlowParticles:false, lyricCameraLock:false,
+    lyricColorMode:'custom', lyricColor:'#eef7ff', lyricHighlightMode:'custom', lyricHighlightColor:'#ffe66d', lyricColorStyle:'rainbow', lyricGlowLinked:false, lyricGlowColor:'#7ad7ff'
+  },
+  focus: {
+    lyricDisplayMode:'single', lyricFont:'hei', lyricLetterSpacing:0.006, lyricLineHeight:1, lyricWeight:900,
+    lyricScale:1.07, lyricOffsetZ:0.18, lyricTiltX:-1, lyricTiltY:0,
+    lyricGlowStrength:0.50, lyricGlow:true, lyricGlowBeat:true, lyricGlowParticles:false, lyricCameraLock:false,
+    lyricColorMode:'custom', lyricColor:'#eaf9ff', lyricHighlightMode:'custom', lyricHighlightColor:'#fff1b8', lyricColorStyle:'mono', lyricGlowLinked:false, lyricGlowColor:'#a6fff1'
   }
 };
 var LYRIC_EFFECT_MOTION = {
@@ -3758,7 +3840,10 @@ var LYRIC_EFFECT_MOTION = {
   typewriter: { float:0.48, beat:0.014, bass:0.020, depth:0.02, roll:0.35, glitch:0, spark:0.80 },
   magnetic: { float:0.78, beat:0.022, bass:0.034, depth:0.05, roll:0.82, glitch:0, spark:1.35 },
   decode: { float:0.52, beat:0.018, bass:0.026, depth:0.05, roll:0.42, glitch:1, spark:0.90 },
-  wave: { float:0.86, beat:0.052, bass:0.058, depth:0.02, roll:0.78, glitch:0, spark:1.05 }
+  wave: { float:0.86, beat:0.052, bass:0.058, depth:0.02, roll:0.78, glitch:0, spark:1.05 },
+  slice: { float:0.58, beat:0.045, bass:0.042, depth:0.04, roll:0.54, glitch:0.55, spark:0.90 },
+  prismburst: { float:0.72, beat:0.060, bass:0.056, depth:0.07, roll:0.72, glitch:0, spark:1.15 },
+  focus: { float:0.50, beat:0.040, bass:0.032, depth:0.05, roll:0.34, glitch:0, spark:0.80 }
 };
 var lyricEffectPresetApplying = false;
 var LYRIC_EFFECT_CUSTOM_KEYS = {
@@ -3781,7 +3866,8 @@ function normalizeLyricEffectPreset(value) {
   if (value === 'beat') return 'wave';
   if (value === 'prism') return 'magnetic';
   if (value === 'glitch') return 'decode';
-  return /^(classic|bounce|typewriter|magnetic|decode|wave|mix)$/.test(value) ? value : 'classic';
+  if (/^(slice|prismburst|focus)$/.test(value)) return 'classic';
+  return /^(classic|bounce|typewriter|magnetic|decode|wave|slice|prismburst|focus|shutter|tape|fold|tunnel|switcher|mix)$/.test(value) ? value : 'classic';
 }
 function effectiveLyricEffectPreset() {
   if (fx && fx.lyricEffectCustom === true) return 'classic';
@@ -3796,6 +3882,54 @@ function lyricEffectShaderIndex(preset) {
 }
 function lyricEffectMotionProfile(preset) {
   return LYRIC_EFFECT_MOTION[renderableLyricEffectPreset(preset || effectiveLyricEffectPreset())] || LYRIC_EFFECT_MOTION.classic;
+}
+function lyricEffectIsSoloTextPreset(preset) {
+  return /^(shutter|tape|fold|tunnel|switcher)$/.test(normalizeLyricEffectPreset(preset));
+}
+function updateLyricEffectPreviewControls() {
+  var btn = document.getElementById('lyric-effect-preview-btn');
+  var status = document.getElementById('lyric-effect-preview-status');
+  if (btn) btn.textContent = lyricEffectPreview.active ? '停止试听' : '试听 5 种动效';
+  if (status) status.textContent = lyricEffectPreview.active
+    ? ((LYRIC_EFFECT_PREVIEW_NAMES[LYRIC_EFFECT_PREVIEW_PRESETS[lyricEffectPreview.index]] || '试听中') + ' ' + (lyricEffectPreview.index + 1) + '/5')
+    : '不改变当前预设';
+}
+function showLyricEffectPreview(index) {
+  if (!lyricEffectPreview.active) return;
+  lyricEffectPreview.index = ((index % LYRIC_EFFECT_PREVIEW_PRESETS.length) + LYRIC_EFFECT_PREVIEW_PRESETS.length) % LYRIC_EFFECT_PREVIEW_PRESETS.length;
+  var preset = LYRIC_EFFECT_PREVIEW_PRESETS[lyricEffectPreview.index];
+  clearStageLyricsScroll();
+  clearStageLyricsScroll3D();
+  stageLyrics.currentIdx = -9;
+  showStageLine(lyricEffectPreview.text, false, preset);
+  if (stageLyrics.current) updateLyricMeshProgress(stageLyrics.current, 0);
+  updateLyricEffectPreviewControls();
+}
+function tickLyricEffectPreview() {
+  if (!lyricEffectPreview.active) return false;
+  var elapsed = Math.max(0, performance.now() / 1000 - lyricEffectPreview.startedAt);
+  var slot = Math.floor(elapsed / lyricEffectPreview.cycleSeconds) % LYRIC_EFFECT_PREVIEW_PRESETS.length;
+  if (slot !== lyricEffectPreview.index || !stageLyrics.current) showLyricEffectPreview(slot);
+  var phase = (elapsed % lyricEffectPreview.cycleSeconds) / lyricEffectPreview.cycleSeconds;
+  lyricEffectPreview.beat = Math.pow(Math.max(0, Math.sin(phase * Math.PI * 4)), 8) * 0.92;
+  if (stageLyrics.current) updateLyricMeshProgress(stageLyrics.current, phase);
+  return true;
+}
+function toggleLyricEffectPreview() {
+  if (prefersReducedLyricMotion()) {
+    showToast('系统已开启减少动态效果，试听保持静态显示');
+  }
+  if (lyricEffectPreview.active) {
+    lyricEffectPreview.active = false;
+    lyricEffectPreview.beat = 0;
+    updateLyricEffectPreviewControls();
+    clearStageLyrics();
+    return;
+  }
+  lyricEffectPreview.active = true;
+  lyricEffectPreview.startedAt = performance.now() / 1000;
+  lyricEffectPreview.index = -1;
+  showLyricEffectPreview(0);
 }
 function chooseMixedLyricEffectPreset(text, keepPreset) {
   keepPreset = renderableLyricEffectPreset(keepPreset);
@@ -6051,6 +6185,7 @@ function updateParticlePointerFrame() {
 function beginParticlePointerDrag(e) {
   if (e.button === 2) return;
   if (isPointerOverUi(e)) return;
+  if (beginShelfTunnelPointerDrag(e)) return;
   markRenderInteraction('canvas-drag', 1200);
   idleGuidePointerDown(e);
   orbit.rotating = true; orbit.last.x = e.clientX; orbit.last.y = e.clientY;
@@ -6088,6 +6223,7 @@ window.addEventListener('mousemove', function(e){
     freeCamera.pitch = clampRange(freeCamera.pitch - mdy * 0.00125, -Math.PI * 0.49, Math.PI * 0.49);
     return;
   }
+  if (updateShelfTunnelPointerDrag(e)) return;
   if (isPointerOverUi(e) && !orbit.rotating) { mouseActive = false; return; }
   if (orbit.rotating) {
     markRenderInteraction('canvas-drag', 900);
@@ -6110,11 +6246,13 @@ window.addEventListener('mousemove', function(e){
   queueParticlePointerFrame(e.clientX, e.clientY);
 });
 window.addEventListener('mouseup', function(){
+  endShelfTunnelPointerDrag();
   orbit.rotating = false;
   particlePointerSpin.active = false;
   idleGuidePointerUp();
 });
 renderer.domElement.addEventListener('mouseleave', function(){
+  endShelfTunnelPointerDrag();
   particlePointerFrame.dirty = false;
   mouseWorld.set(-999, -999, 0);
   mouseActive = false;
@@ -6153,6 +6291,10 @@ renderer.domElement.addEventListener('dblclick', function(e){
     var rc = new THREE.Raycaster();
     rc.setFromCamera(new THREE.Vector2(mx, my), camera);
     if (shelfManager.raycastCards(rc)) return;
+    if (isShelfTunnelMode(shelfManager.getMode())) {
+      resetShelfTunnelMotion();
+      return;
+    }
   }
   recenterCamera();
 });
@@ -8285,10 +8427,14 @@ function normalizeDesktopLyricsFps(value) {
 function normalizeShelfMode(value) {
   value = String(value || '');
   if (value === 'stage') return 'linked';
-  return /^(off|side|linked)$/.test(value) ? value : SHELF_FIXED_MODE;
+  return /^(off|side|linked|tunnel)$/.test(value) ? value : SHELF_FIXED_MODE;
 }
 function isShelfRightMode(mode) {
   return mode === 'side' || mode === 'linked';
+}
+function isShelfTunnelMode(mode) {
+  mode = mode == null ? shelfCurrentMode() : normalizeShelfMode(mode);
+  return mode === 'tunnel';
 }
 function isShelfFixedMode(mode) {
   mode = mode == null ? shelfCurrentMode() : normalizeShelfMode(mode);
@@ -8306,7 +8452,7 @@ function isShelfCurrentRightMode() {
 }
 function shelfModeLabel(mode) {
   mode = normalizeShelfMode(mode);
-  return mode === 'off' ? '关闭' : (mode === 'linked' ? '舞台联动' : '固定右边');
+  return mode === 'off' ? '关闭' : (mode === 'linked' ? '舞台联动' : (mode === 'tunnel' ? '空间隧道' : '固定右边'));
 }
 function normalizeShelfCameraMode(value) {
   value = String(value || '');
@@ -8334,7 +8480,7 @@ function applyShelfModePresencePolicy(target) {
   if (!target) return target;
   target.shelf = normalizeShelfMode(target.shelf);
   if (target.shelf === 'side') target.shelfPresence = 'auto';
-  else if (target.shelf === 'linked') target.shelfPresence = 'always';
+  else if (target.shelf === 'linked' || target.shelf === 'tunnel') target.shelfPresence = 'always';
   else target.shelfPresence = normalizeShelfPresence(target.shelfPresence);
   return target;
 }
@@ -8370,7 +8516,7 @@ function shelfSettings() {
 function shelfAlwaysVisible() {
   if (!fx) return false;
   applyShelfModePresencePolicy(fx);
-  return fx.shelf === 'linked';
+  return fx.shelf === 'linked' || fx.shelf === 'tunnel';
 }
 function shouldUseShelfDynamicCamera(type) {
   if (!/^shelf-/.test(String(type || ''))) return true;
@@ -9363,7 +9509,18 @@ function makeLyricReadabilityMaterial(mask, texture) {
       uOpacity: { value: 0 },
       uFeather: { value: lyricsHasNativeKaraoke ? 0.030 : 0.055 }
     },
-    vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    vertexShader: [
+      'uniform float uProgress,uEffectPreset,uTime;',
+      'varying vec2 vUv;',
+      'void main(){',
+      '  vUv=uv; vec3 pos=position; float effect=floor(uEffectPreset+0.5);',
+      '  float enter=smoothstep(0.03,0.42,uProgress);',
+      '  if(effect==11.0){ float crease=sin(uv.x*3.14159265); pos.y*=mix(0.14,1.0,enter); pos.z+=crease*(1.0-enter)*0.46; }',
+      '  if(effect==12.0){ float zoom=mix(0.22,1.0,smoothstep(0.02,0.56,uProgress)); pos.xy*=zoom; pos.z-= (1.0-zoom)*2.10; }',
+      '  if(effect==10.0){ pos.x+=sin(uv.y*42.0+uTime*28.0)*(1.0-smoothstep(0.15,0.82,uProgress))*0.10; }',
+      '  gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1.0);',
+      '}'
+    ].join('\\n'),
     fragmentShader: [
       'precision highp float;',
       'uniform sampler2D uMap;',
@@ -9616,14 +9773,23 @@ function makeLyricShaderMaterial(mask, pal, effectPreset) {
       '  float gate = step(0.82, fract(sin((floor(uv.y * 52.0) + floor(uTime * 14.0)) * 43.17) * 43758.5453));',
       '  float slice = gate * smoothstep(0.02, 0.08, slicePhase) * (1.0 - smoothstep(0.14, 0.22, slicePhase));',
       '  float glitchShift = (gate - 0.5) * slice * glitchAmt * 0.012;',
-      '  float maskCore = texture2D(uMap, uv).a;',
-      '  float maskR = texture2D(uMap, clamp(uv + vec2(split, 0.0), vec2(0.0), vec2(1.0))).a;',
-      '  float maskB = texture2D(uMap, clamp(uv - vec2(split, 0.0), vec2(0.0), vec2(1.0))).a;',
-      '  float maskGlitch = texture2D(uMap, clamp(uv + vec2(glitchShift, 0.0), vec2(0.0), vec2(1.0))).a;',
+      '  vec2 sampleUv=uv;',
+      '  if(effect==10.0) sampleUv.x+=sin(uv.y*36.0+uTime*31.0)*(1.0-smoothstep(0.20,0.86,uProgress))*0.026;',
+      '  if(effect==13.0) sampleUv.x+=(fract(sin(floor(uv.y*30.0+uTime*16.0)*91.71)*43758.5453)-0.5)*(1.0-smoothstep(0.20,0.64,uProgress))*0.055;',
+      '  float maskCore = texture2D(uMap, clamp(sampleUv, vec2(0.0), vec2(1.0))).a;',
+      '  float maskR = texture2D(uMap, clamp(sampleUv + vec2(split, 0.0), vec2(0.0), vec2(1.0))).a;',
+      '  float maskB = texture2D(uMap, clamp(sampleUv - vec2(split, 0.0), vec2(0.0), vec2(1.0))).a;',
+      '  float maskGlitch = texture2D(uMap, clamp(sampleUv + vec2(glitchShift, 0.0), vec2(0.0), vec2(1.0))).a;',
       '  float mask = max(maskCore, max(max(maskR, maskB) * prismAmt * 0.62, maskGlitch * glitchAmt * 0.70));',
       '  float solid = smoothstep(0.08, 0.32, maskCore);',
       '  float sung = clamp(filled, 0.0, 1.0);',
-      '  float fillAlpha = max(mask, solid * 0.98) * sung;',
+      '  float specialAlpha=sung;',
+      '  if(effect==9.0){ float shutter=1.0-smoothstep(0.015,0.105,abs(uv.y-(1.0-uProgress))); specialAlpha=shutter; }',
+      '  if(effect==10.0) specialAlpha=smoothstep(0.03,0.16,uProgress)*(1.0-smoothstep(0.89,1.0,uProgress));',
+      '  if(effect==11.0) specialAlpha=smoothstep(0.08,0.40,uProgress)*(1.0-smoothstep(0.92,1.0,uProgress));',
+      '  if(effect==12.0) specialAlpha=smoothstep(0.02,0.18,uProgress)*(1.0-smoothstep(0.90,1.0,uProgress));',
+      '  if(effect==13.0){ float blocks=step(0.46,fract(sin(floor(uv.x*22.0+uv.y*15.0+uTime*18.0)*31.17)*43758.5453)); specialAlpha=mix(blocks,1.0,smoothstep(0.18,0.60,uProgress))*(1.0-smoothstep(0.90,1.0,uProgress)); }',
+      '  float fillAlpha = max(mask, solid * 0.98) * specialAlpha;',
       '  float totalAlpha = clamp(fillAlpha, 0.0, 1.0);',
       '  if(totalAlpha < 0.006) discard;',
       '  vec3 fillColor = mix(uBaseColor, uHiColor, sung);',
@@ -9647,7 +9813,10 @@ function makeLyricShaderMaterial(mask, pal, effectPreset) {
 var LYRIC_DECODE_CHARS = '01#$%&?+*<>/\\';
 function lyricEffectUsesCharMeshes(preset) {
   preset = normalizeLyricEffectPreset(preset);
-  return /^(bounce|typewriter|magnetic|decode|wave)$/.test(preset);
+  return /^(bounce|typewriter|magnetic|decode|wave|slice|prismburst|focus)$/.test(preset);
+}
+function lyricEffectOwnsOnlyTextLayer(data) {
+  return lyricCharFxOwnsTextLayer(data) || lyricEffectIsSoloTextPreset(data && data.effectPreset);
 }
 function lyricCharFxOwnsTextLayer(data) {
   return !!(data && data.charFx && data.charFx.group && data.charFx.chars && data.charFx.chars.length);
@@ -9818,7 +9987,7 @@ function buildLyricMesh(text, effectPreset) {
   var pal = stageLyrics.palette;
   var worldW = 6.10;
   var worldH = worldW * (mask.height / mask.width);
-  var geo = new THREE.PlaneGeometry(worldW, worldH, 1, 1);
+  var geo = new THREE.PlaneGeometry(worldW, worldH, 28, 1);
   var textWorldW = worldW * (mask.textWidth / mask.width);
   var textWorldH = worldH * ((mask.textHeight || mask.fontSize) / mask.height);
   var group = new THREE.Group();
@@ -10103,6 +10272,55 @@ function tickLyricCharFx(data, mesh, active, opacity, progress, time, beatDrive,
         rz = Math.sin(phase * 0.52) * activeBand * 0.075;
         flash = activeBand * (0.22 + beatDrive * 0.16);
       }
+    } else if (mode === 'slice') {
+      if (local < -0.10) o = 0;
+      else {
+        var sliceP = clampRange((local + 0.10) / 0.42, 0, 1);
+        ease = lyricCharEaseOutExpo(sliceP);
+        var sliceBand = Math.sin(sliceP * Math.PI);
+        var sliceDir = lyricCharRand(item.seed + 41) < 0.5 ? -1 : 1;
+        var sliceJitter = Math.sin(time * 28.0 + item.seed) * (1 - sliceP) * 0.038;
+        o *= clampRange((local + 0.10) / 0.16, 0, 1);
+        x += sliceDir * (1 - ease) * (0.18 + glyphW * 0.56) + sliceJitter;
+        y += Math.sin(time * 18.0 + idx * 1.7) * sliceBand * (0.020 + beatDrive * 0.016);
+        z += sliceBand * (0.10 + bassDrive * 0.09);
+        sx = 0.82 + ease * 0.18 + sliceBand * (0.12 + beatDrive * 0.05);
+        sy = 0.92 + ease * 0.08 - sliceBand * 0.10;
+        rz = sliceDir * (1 - ease) * 0.10 + Math.sin(time * 20.0 + item.seed) * sliceBand * 0.030;
+        flash = 0.18 + sliceBand * (0.28 + beatDrive * 0.18);
+      }
+    } else if (mode === 'prismburst') {
+      if (local < -0.06) o = 0;
+      else {
+        var burstP = clampRange((local + 0.06) / 0.50, 0, 1);
+        ease = lyricCharEaseOutExpo(burstP);
+        var burst = Math.sin(burstP * Math.PI);
+        var burstSeed = lyricCharRand(item.seed + 51);
+        var spread = (1 - ease) * (0.28 + glyphW * 0.95);
+        o *= clampRange((local + 0.06) / 0.12, 0, 1);
+        x += (burstSeed - 0.5) * spread + Math.sin(time * 16.0 + item.seed) * burst * 0.028;
+        y += (lyricCharRand(item.seed + 52) - 0.5) * spread * 0.72 + burst * (0.055 + beatDrive * 0.060);
+        z += (1 - ease) * 0.36 + burst * (0.18 + bassDrive * 0.10);
+        sx = sy = 0.36 + ease * 0.64 + burst * (0.30 + beatDrive * 0.10);
+        rz = item.startRot * (1 - ease) * 0.38 + Math.sin(burstP * Math.PI * 2.0 + item.seed) * burst * 0.14;
+        ry = (1 - ease) * (lyricCharRand(item.seed + 53) < 0.5 ? -0.55 : 0.55);
+        flash = 0.22 + burst * (0.42 + beatDrive * 0.20);
+      }
+    } else if (mode === 'focus') {
+      if (local < -0.04) o = 0;
+      else {
+        var focusP = clampRange((local + 0.04) / 0.34, 0, 1);
+        ease = lyricCharEaseOutExpo(focusP);
+        var focusRing = Math.sin(focusP * Math.PI);
+        var focusDrift = (1 - ease) * (0.035 + bassDrive * 0.025);
+        o *= clampRange((local + 0.04) / 0.10, 0, 1);
+        x += (lyricCharRand(item.seed + 61) - 0.5) * focusDrift;
+        y += (lyricCharRand(item.seed + 62) - 0.5) * focusDrift + focusRing * (0.030 + beatDrive * 0.045);
+        z += (1 - ease) * 0.30 + focusRing * 0.11;
+        sx = sy = 1.18 - ease * 0.18 + focusRing * (0.10 + beatDrive * 0.06);
+        rz = (lyricCharRand(item.seed + 63) - 0.5) * (1 - ease) * 0.08;
+        flash = focusRing * (0.32 + beatDrive * 0.18);
+      }
     }
     if (mode !== 'decode' || outgoing) setLyricCharItemMap(item, item.map);
     updateLyricCharItemColor(charFx, item, progress, flash, time, beatDrive, bassDrive);
@@ -10144,14 +10362,14 @@ function updateLyricMeshProgress(mesh, progress) {
   if (!mesh || !mesh.userData || !mesh.userData.lyric) return;
   progress = Math.max(0, Math.min(1, progress || 0));
   var d = mesh.userData.lyric;
-  var visualProgress = lyricVisualProgressForMask(d.mask, progress);
+  var visualProgress = lyricEffectIsSoloTextPreset(d.effectPreset) ? progress : lyricVisualProgressForMask(d.mask, progress);
   d.textMat.uniforms.uProgress.value = visualProgress;
   if (d.readabilityMat && d.readabilityMat.uniforms && d.readabilityMat.uniforms.uProgress) d.readabilityMat.uniforms.uProgress.value = visualProgress;
   mesh.userData.lastLyricRawProgress = progress;
   mesh.userData.lastLyricProgress = visualProgress;
 }
 
-function showStageLine(text, redrawOnly) {
+function showStageLine(text, redrawOnly, forcedEffectPreset) {
   createLyricsParticles();
   if (!stageLyrics.group) return;
   if (!text) { clearStageLyrics(); return; }
@@ -10165,7 +10383,7 @@ function showStageLine(text, redrawOnly) {
     stageLyrics.outgoing.push(stageLyrics.current);
   }
   stageLyrics.currentText = text;
-  var mesh = buildLyricMesh(text, lyricLineEffectPreset(text, keepEffectPreset));
+  var mesh = buildLyricMesh(text, forcedEffectPreset || lyricLineEffectPreset(text, keepEffectPreset));
   stageLyrics.group.add(mesh);
   stageLyrics.current = mesh;
 }
@@ -10452,9 +10670,10 @@ function updateStageLyrics3D(dt) {
   var lyricGlowStrength = fx.lyricGlow ? Math.min(0.85, Math.max(0, fx.lyricGlowStrength)) : 0;
   var glowDrive = Math.min(1.7, Math.max(0, lyricGlowStrength / 0.50));
   var glowBreath = lyricGlowStrength > 0 ? (0.5 + 0.5 * Math.sin(t * 1.05)) : 0;
-  var musicBloom = Math.max(lyricSunEnergy, beatPulse * 0.10);
+  var previewBeat = lyricEffectPreview.active ? lyricEffectPreview.beat : 0;
+  var musicBloom = Math.max(lyricSunEnergy, beatPulse * 0.10, previewBeat * 0.26);
   var beatGlowRaw = fx.lyricGlowBeat && lyricGlowStrength > 0
-    ? Math.max(beatPulse * 1.22, beatCam.punch * 0.86 + beatCam.radiusKick * 1.85)
+    ? Math.max(beatPulse * 1.22, beatCam.punch * 0.86 + beatCam.radiusKick * 1.85, previewBeat)
     : 0;
   stageLyrics.beatGlow += (beatGlowRaw - stageLyrics.beatGlow) * (beatGlowRaw > stageLyrics.beatGlow ? 0.32 : 0.10);
   if (!isFinite(stageLyrics.beatGlow)) stageLyrics.beatGlow = 0;
@@ -10610,8 +10829,8 @@ function updateStageLyrics3D(dt) {
     if (u.uColorMode) u.uColorMode.value = lyricColorStyleIndex();
     if (u.uBeat) u.uBeat.value = active ? beatDrive : beatDrive * 0.45;
     if (u.uBass) u.uBass.value = active ? bassDrive : bassDrive * 0.42;
-    if (u.uScanStrength) u.uScanStrength.value = meshEffectName === 'typewriter' ? clampRange(0.62 + stageLyrics.highBloom * 0.18 + beatPulse * 0.06, 0, 1) : 0;
-    if (u.uPrismStrength) u.uPrismStrength.value = meshEffectName === 'magnetic' ? clampRange(0.66 + stageLyrics.beatGlow * 0.16 + bassDrive * 0.08, 0, 1) : 0;
+    if (u.uScanStrength) u.uScanStrength.value = /^(typewriter|slice)$/.test(meshEffectName) ? clampRange(0.62 + stageLyrics.highBloom * 0.18 + beatPulse * 0.06, 0, 1) : 0;
+    if (u.uPrismStrength) u.uPrismStrength.value = /^(magnetic|prismburst)$/.test(meshEffectName) ? clampRange(0.66 + stageLyrics.beatGlow * 0.16 + bassDrive * 0.08, 0, 1) : 0;
     if (u.uGlitch) u.uGlitch.value = lyricMotion.glitch ? clampRange(entry * (active ? 0.72 : 0.38) + beatPulse * 0.20 + stageLyrics.beatGlow * 0.13, 0, 1) : 0;
   }
   function tickMesh(mesh, isCurrent) {
@@ -10621,7 +10840,7 @@ function updateStageLyrics3D(dt) {
     var meshEffectName = lyricDataEffectPreset(data);
     var lyricMotion = lyricEffectMotionProfile(meshEffectName);
     var meshCharMode = data.charFx ? normalizeLyricEffectPreset(data.charFx.mode) : '';
-    var exitDuration = meshCharMode === 'typewriter' ? 1.42 : 0.38;
+    var exitDuration = /^(typewriter|prismburst|focus)$/.test(meshCharMode) ? 1.12 : 0.38;
     var a = Math.min(1, mesh.userData.age / (isCurrent ? 0.52 : exitDuration));
     a = a * a * (3 - 2 * a);
     syncLyricEffectMeshUniforms(data, !!isCurrent, a, meshEffectName, lyricMotion);
@@ -10691,9 +10910,10 @@ function updateStageLyrics3D(dt) {
       }
       var mainTextFactor = tickLyricCharFx(data, mesh, true, opacity, mesh.userData.lastLyricProgress, t, stageLyrics.beatGlow, bass, false);
       var charFxOwnsText = lyricCharFxOwnsTextLayer(data);
+      var effectOwnsTextLayer = lyricEffectOwnsOnlyTextLayer(data);
       if (data.textMesh) data.textMesh.visible = !charFxOwnsText;
       if (data.textMat && data.textMat.uniforms.uOpacity) data.textMat.uniforms.uOpacity.value = opacity * mainTextFactor;
-      if (charFxOwnsText) {
+      if (effectOwnsTextLayer) {
         if (data.readabilityMat) setLyricReadabilityOpacity(data, 0);
         if (data.glowMat) data.glowMat.opacity = 0;
         if (data.sunMat) data.sunMat.opacity = 0;
@@ -10728,7 +10948,25 @@ function updateStageLyrics3D(dt) {
         mesh.position.z += ((1.48 + Math.cos(t * 0.48 + seed) * 0.080 * effectFloat + stageLyrics.beatGlow * (lyricMotion.depth || 0) * 0.045) - mesh.position.z) * 0.080;
         mesh.rotation.z = Math.sin(t * 0.34 + seed) * 0.018 * effectRoll + (lyricMotion.glitch ? Math.sin(t * 12.0 + seed) * 0.006 * stageLyrics.beatGlow : 0);
       }
-      if (data.sparks && data.sparkMat) data.sparks.visible = fx.lyricGlowParticles || getLyricSparkOpacity(data) > 0.015;
+      if (lyricEffectIsSoloTextPreset(meshEffectName) && !prefersReducedLyricMotion()) {
+        var previewProgress = mesh.userData.lastLyricRawProgress || 0;
+        var previewImpact = Math.pow(Math.max(0, Math.sin(previewProgress * Math.PI * 4)), 7);
+        if (meshEffectName === 'tape') {
+          mesh.rotation.z += Math.sin(t * 19.0) * (1 - previewProgress) * 0.010;
+          mesh.scale.x *= 1 + (1 - previewProgress) * 0.11 + previewImpact * 0.035;
+          mesh.scale.y *= 1 - (1 - previewProgress) * 0.08;
+        } else if (meshEffectName === 'fold') {
+          mesh.rotation.x = (1 - previewProgress) * -0.32;
+          mesh.rotation.z += Math.sin(previewProgress * Math.PI) * 0.045;
+        } else if (meshEffectName === 'tunnel') {
+          mesh.scale.multiplyScalar(0.90 + previewProgress * 0.16 + previewImpact * 0.06);
+          mesh.position.z += (1 - previewProgress) * -0.34;
+        } else if (meshEffectName === 'switcher') {
+          mesh.position.x += Math.sin(t * 38.0) * (1 - previewProgress) * 0.050;
+          mesh.rotation.z += Math.sin(t * 29.0) * (1 - previewProgress) * 0.018;
+        }
+      }
+      if (data.sparks && data.sparkMat) data.sparks.visible = !effectOwnsTextLayer && (fx.lyricGlowParticles || getLyricSparkOpacity(data) > 0.015);
       if (data.sparks && data.basePositions) {
         var pos = data.sparks.geometry.attributes.position;
         var arr = pos.array, base = data.basePositions;
@@ -10760,9 +10998,10 @@ function updateStageLyrics3D(dt) {
     if (data.sunMat) data.sunMat.opacity = lyricGlowStrength > 0 && !shelfDetailOpen ? opacity * 0.08 * lyricGlowStrength : 0;
     var outgoingMainFactor = tickLyricCharFx(data, mesh, false, opacity, mesh.userData.lastLyricProgress, t, stageLyrics.beatGlow, bass, true);
     var outgoingCharFxOwnsText = lyricCharFxOwnsTextLayer(data);
+    var outgoingEffectOwnsTextLayer = lyricEffectOwnsOnlyTextLayer(data);
     if (data.textMesh) data.textMesh.visible = !outgoingCharFxOwnsText;
     if (data.textMat && data.textMat.uniforms.uOpacity) data.textMat.uniforms.uOpacity.value = opacity * outgoingMainFactor;
-    if (outgoingCharFxOwnsText) {
+    if (outgoingEffectOwnsTextLayer) {
       if (data.readabilityMat) setLyricReadabilityOpacity(data, 0);
       if (data.glowMat) data.glowMat.opacity = 0;
       if (data.sunMat) data.sunMat.opacity = 0;
@@ -10960,6 +11199,7 @@ function getLyricLineProgress(line, nextLine, now) {
 }
 
 function tickLyricsParticles() {
+  if (tickLyricEffectPreview()) return;
   if (!fx.particleLyrics) {
     if (stageLyrics.current || stageLyrics.currentText || (stageLyrics.outgoing && stageLyrics.outgoing.length) || (stageLyrics.scrollRows && stageLyrics.scrollRows.length)) clearStageLyrics();
     clearStageLyricsScroll();
@@ -14472,6 +14712,70 @@ var shelfManager = null;
 var shelfOpenAnimAt = -10;
 var shelfHoverCue = { target: 0, value: 0, x: 0, y: 0, lastAt: 0, enteredAt: 0, zoneActive: false, guide: false };
 var shelfVisibility = 0;  // 0..1, 侧栏自动隐藏的整体透明度系数
+var shelfTunnelMotion = {
+  yaw: 0,
+  targetYaw: 0,
+  pitch: 0,
+  targetPitch: 0,
+  yawVelocity: 0,
+  pitchVelocity: 0,
+  depthPulse: 0,
+  dragging: false,
+  lastX: 0,
+  lastY: 0,
+  lastAt: 0
+};
+function prefersReducedShelfMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function resetShelfTunnelMotion() {
+  shelfTunnelMotion.targetYaw = 0;
+  shelfTunnelMotion.targetPitch = 0;
+  shelfTunnelMotion.yawVelocity = 0;
+  shelfTunnelMotion.pitchVelocity = 0;
+  shelfTunnelMotion.depthPulse = 0.42;
+  showToast('空间隧道已回正');
+}
+function beginShelfTunnelPointerDrag(e) {
+  if (!e || e.button === 2 || !isShelfTunnelMode()) return false;
+  if (shelfManager && shelfManager.hasOpenContent && shelfManager.hasOpenContent()) return false;
+  shelfTunnelMotion.dragging = true;
+  shelfTunnelMotion.lastX = e.clientX;
+  shelfTunnelMotion.lastY = e.clientY;
+  shelfTunnelMotion.lastAt = performance.now();
+  mouseDownAt.x = e.clientX;
+  mouseDownAt.y = e.clientY;
+  mouseDownAt.t = shelfTunnelMotion.lastAt;
+  mouseDownAt.hadDrag = false;
+  document.body.classList.add('shelf-tunnel-dragging');
+  markRenderInteraction('shelf-tunnel-drag', 1200);
+  return true;
+}
+function updateShelfTunnelPointerDrag(e) {
+  if (!shelfTunnelMotion.dragging || !isShelfTunnelMode()) return false;
+  var now = performance.now();
+  var dt = Math.max(8, Math.min(80, now - (shelfTunnelMotion.lastAt || now)));
+  var dx = e.clientX - shelfTunnelMotion.lastX;
+  var dy = e.clientY - shelfTunnelMotion.lastY;
+  shelfTunnelMotion.targetYaw += dx * 0.0062;
+  shelfTunnelMotion.targetPitch = clampRange(shelfTunnelMotion.targetPitch + dy * 0.0036, -0.72, 0.72);
+  shelfTunnelMotion.yawVelocity = clampRange(dx * (16 / dt) * 0.0018, -0.012, 0.012);
+  shelfTunnelMotion.pitchVelocity = clampRange(dy * (16 / dt) * 0.0006, -0.003, 0.003);
+  shelfTunnelMotion.lastX = e.clientX;
+  shelfTunnelMotion.lastY = e.clientY;
+  shelfTunnelMotion.lastAt = now;
+  var totalDx = e.clientX - mouseDownAt.x;
+  var totalDy = e.clientY - mouseDownAt.y;
+  if (Math.sqrt(totalDx * totalDx + totalDy * totalDy) > CLICK_THRESHOLD) mouseDownAt.hadDrag = true;
+  markRenderInteraction('shelf-tunnel-drag', 900);
+  return true;
+}
+function endShelfTunnelPointerDrag() {
+  if (!shelfTunnelMotion.dragging) return false;
+  shelfTunnelMotion.dragging = false;
+  document.body.classList.remove('shelf-tunnel-dragging');
+  return true;
+}
 var shelfViewportForward = new THREE.Vector3();
 var shelfViewportRight = new THREE.Vector3();
 var shelfViewportUp = new THREE.Vector3();
@@ -14720,6 +15024,96 @@ function makeShelfManager() {
   var contentList = null;     // 二级 PSP 滚动列表 manager
   var connectorParticles = null;
   var floorMirror = null;
+  var tunnelField = null;
+
+  function disposeTunnelField() {
+    if (!tunnelField) return;
+    if (tunnelField.parent) tunnelField.parent.remove(tunnelField);
+    tunnelField.traverse(function(obj){
+      if (obj.geometry && obj.geometry.dispose) obj.geometry.dispose();
+      if (obj.material) {
+        if (Array.isArray(obj.material)) obj.material.forEach(function(mat){ if (mat && mat.dispose) mat.dispose(); });
+        else if (obj.material.dispose) obj.material.dispose();
+      }
+    });
+    tunnelField = null;
+  }
+
+  function createTunnelField() {
+    if (!group || tunnelField) return;
+    tunnelField = new THREE.Group();
+    tunnelField.renderOrder = 18;
+    group.add(tunnelField);
+
+    var starCount = prefersReducedShelfMotion() ? 130 : 260;
+    var positions = new Float32Array(starCount * 3);
+    var colors = new Float32Array(starCount * 3);
+    var accent = new THREE.Color('#2e6bff');
+    var cyan = new THREE.Color('#00f5d4');
+    var gold = new THREE.Color('#f4d28a');
+    var mixed = new THREE.Color();
+    for (var si = 0; si < starCount; si++) {
+      var seed = (si * 0.61803398875) % 1;
+      var angle = seed * Math.PI * 2 + (si % 7) * 0.31;
+      var radius = 1.45 + ((si * 37) % 100) / 100 * 4.2;
+      positions[si * 3] = Math.cos(angle) * radius;
+      positions[si * 3 + 1] = Math.sin(angle) * radius * 0.66;
+      positions[si * 3 + 2] = 2.2 - ((si * 53) % 100) / 100 * 11.5;
+      mixed.copy(si % 17 === 0 ? gold : (si % 5 === 0 ? cyan : accent));
+      mixed.multiplyScalar(0.62 + ((si * 29) % 35) / 100);
+      colors[si * 3] = mixed.r;
+      colors[si * 3 + 1] = mixed.g;
+      colors[si * 3 + 2] = mixed.b;
+    }
+    var starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    var starMat = new THREE.PointsMaterial({
+      size: prefersReducedShelfMotion() ? 0.022 : 0.032,
+      map: dotTexture,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.56,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true
+    });
+    var stars = new THREE.Points(starGeo, starMat);
+    stars.renderOrder = 18;
+    stars.userData.tunnelStars = true;
+    tunnelField.add(stars);
+
+    var ringGroup = new THREE.Group();
+    ringGroup.userData.tunnelRings = true;
+    for (var ri = 0; ri < 7; ri++) {
+      var ringRadius = 2.20 + ri * 0.17;
+      var ringPoints = [];
+      for (var rp = 0; rp < 72; rp++) {
+        var ra = (rp / 72) * Math.PI * 2;
+        ringPoints.push(new THREE.Vector3(Math.cos(ra) * ringRadius, Math.sin(ra) * ringRadius * 0.66, -ri * 1.55 + 0.8));
+      }
+      var ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
+      var ringColor = ri % 4 === 0 ? 0xf4d28a : (ri % 3 === 0 ? 0x00f5d4 : 0x2e6bff);
+      var ringMat = new THREE.LineBasicMaterial({ color:ringColor, transparent:true, opacity:ri % 4 === 0 ? 0.10 : 0.075, depthWrite:false, blending:THREE.AdditiveBlending });
+      var ring = new THREE.LineLoop(ringGeo, ringMat);
+      ring.renderOrder = 17;
+      ringGroup.add(ring);
+    }
+    tunnelField.add(ringGroup);
+  }
+
+  function updateTunnelField(dt) {
+    if (!tunnelField) return;
+    var reduced = prefersReducedShelfMotion();
+    var nowT = uniforms.uTime.value || 0;
+    tunnelField.visible = mode === 'tunnel' && group && group.visible;
+    tunnelField.rotation.z += reduced ? 0 : dt * 0.008;
+    tunnelField.position.z = reduced ? 0 : Math.sin(nowT * 0.18) * 0.10 - shelfTunnelMotion.depthPulse * 0.18;
+    tunnelField.children.forEach(function(child){
+      if (child.userData && child.userData.tunnelStars) child.rotation.z = shelfTunnelMotion.yaw * 0.045 + nowT * (reduced ? 0 : 0.004);
+      if (child.userData && child.userData.tunnelRings) child.rotation.z = shelfTunnelMotion.yaw * 0.12 + nowT * (reduced ? 0 : 0.010);
+    });
+  }
 
   // 一次性返回完整 items 数组 (不只 5 张, 全部参与 PSP 滚动)
   function splitPlaylists() {
@@ -15027,6 +15421,7 @@ function makeShelfManager() {
   function rebuild(asyncCards) {
     if (!group) return;
     disposeRenderedCards();
+    disposeTunnelField();
     if (connectorParticles) {
       if (connectorParticles.parent) connectorParticles.parent.remove(connectorParticles);
       if (connectorParticles.geometry) connectorParticles.geometry.dispose();
@@ -15057,6 +15452,8 @@ function makeShelfManager() {
     syncRenderedWindow(true, !!asyncCards);
     if (mode === 'stage') {
       createStageExtras();
+    } else if (mode === 'tunnel') {
+      createTunnelField();
     }
   }
 
@@ -15067,8 +15464,8 @@ function makeShelfManager() {
   function placeCard(card, i, totalCards, modeIs) {
     var delta = card.index - centerSmooth;     // 正=下方, 负=上方
     var absD = Math.abs(delta);
-    // 隐藏太远的卡 (>4 全隐藏)
-    if (absD > SHELF_VISIBLE_RADIUS + 0.5) { card.mesh.visible = false; return; }
+    var visibleRadius = isShelfTunnelMode(modeIs) ? 10 : SHELF_VISIBLE_RADIUS;
+    if (absD > visibleRadius + 0.5) { card.mesh.visible = false; return; }
     card.mesh.visible = true;
     card.mesh.renderOrder = 60 + Math.round((SHELF_VISIBLE_RADIUS + 1 - Math.min(absD, SHELF_VISIBLE_RADIUS + 1)) * 10);
     var parX = pointerParallax.x || 0;
@@ -15085,7 +15482,60 @@ function makeShelfManager() {
       drawCard(card, card.item);
     }
 
-    if (isShelfRightMode(modeIs)) {
+    if (isShelfTunnelMode(modeIs)) {
+      var tunnelNow = uniforms.uTime.value || 0;
+      var tunnelReduced = prefersReducedShelfMotion();
+      var tunnelOpen = contentList && contentList.isOpen();
+      var tunnelSelected = card.index === openCardIdx;
+      var tunnelRevealRaw = clampRange((tunnelNow - shelfOpenAnimAt - absD * 0.025) / 0.72, 0, 1);
+      var tunnelReveal = tunnelRevealRaw * tunnelRevealRaw * (3 - 2 * tunnelRevealRaw);
+      var tunnelAngle = delta * 0.82 + shelfTunnelMotion.yaw;
+      if (!tunnelReduced && !shelfTunnelMotion.dragging) tunnelAngle += tunnelNow * 0.034;
+      var tunnelRadius = 2.48 + Math.min(absD, 7) * 0.13;
+      var tunnelDepth = 1.54 - absD * 0.50 - shelfTunnelMotion.depthPulse * 0.24;
+      var orbitX = Math.sin(tunnelAngle) * tunnelRadius;
+      var orbitY = Math.cos(tunnelAngle) * tunnelRadius * 0.63;
+      var driftX = tunnelReduced ? 0 : Math.sin(tunnelNow * 0.39 + card.index * 1.71) * 0.075;
+      var driftY = tunnelReduced ? 0 : Math.cos(tunnelNow * 0.31 + card.index * 1.13) * 0.060;
+      var driftZ = tunnelReduced ? 0 : Math.sin(tunnelNow * 0.27 + card.index * 0.83) * 0.055;
+      var pitchCos = Math.cos(shelfTunnelMotion.pitch);
+      var pitchSin = Math.sin(shelfTunnelMotion.pitch);
+      var tunnelY = orbitY * pitchCos - tunnelDepth * pitchSin;
+      var tunnelZ = tunnelDepth * pitchCos + orbitY * pitchSin;
+      var focusLift = card.selected && !tunnelOpen ? 1 : 0;
+      card.floatMix = (card.floatMix || 0) + (focusLift - (card.floatMix || 0)) * (focusLift ? 0.18 : 0.10);
+      if (tunnelOpen && tunnelSelected) {
+        card.mesh.position.set(0, 0, 1.02);
+        card.mesh.scale.setScalar((1.25 + pulse * 0.045) * shelfLook.size);
+        card.mesh.renderOrder = 190;
+        card.mesh.material.opacity = shelfLook.opacity;
+        card.mesh.material.color.setScalar(1);
+      } else {
+        var tunnelEntry = (1 - tunnelReveal) * (1.2 + absD * 0.12);
+        card.mesh.position.set(
+          orbitX + driftX + parX * 0.11 * parWeight,
+          tunnelY + driftY + parY * 0.08 * parWeight,
+          tunnelZ + driftZ - tunnelEntry
+        );
+        var depthScale = Math.max(0.40, 1.08 - absD * 0.082);
+        var centerScale = absD < 0.5 ? 1.38 : depthScale;
+        var tunnelScale = centerScale * (0.84 + tunnelReveal * 0.16) * (1 + pulse * 0.055 + (card.floatMix || 0) * 0.10) * shelfLook.size;
+        card.mesh.scale.setScalar(tunnelScale);
+        card.mesh.renderOrder = 78 + Math.round((SHELF_VISIBLE_RADIUS + 1 - Math.min(absD, SHELF_VISIBLE_RADIUS + 1)) * 13) + Math.round((card.floatMix || 0) * 45);
+        var tunnelOpacity = absD < 0.5 ? 1 : Math.max(0.18, 0.94 - absD * 0.090);
+        if (tunnelOpen) tunnelOpacity *= 0.12;
+        card.mesh.material.opacity = Math.min(1, tunnelOpacity * tunnelReveal + pulse * 0.10) * shelfLook.opacity;
+        card.mesh.material.color.setScalar(tunnelOpen ? 0.38 : 1);
+      }
+      if (camera) {
+        card.mesh.quaternion.copy(camera.quaternion);
+        if (!tunnelOpen || !tunnelSelected) {
+          card.mesh.rotateY(-Math.sin(tunnelAngle) * 0.10);
+          card.mesh.rotateX(Math.cos(tunnelAngle) * 0.035);
+        }
+      }
+      setCardCenter(card, absD < 0.5 || (tunnelOpen && tunnelSelected));
+    } else if (isShelfRightMode(modeIs)) {
       // 右侧歌单架: side 固定在屏幕右边；linked 保留跟随舞台的 3D 联动。
       var linkedShelfMode = modeIs === 'linked';
       var detailOpenSide = contentList && contentList.isOpen();
@@ -15426,6 +15876,7 @@ void main(){ vec4 t = texture2D(uDotTex, gl_PointCoord); if (t.a < 0.02) discard
       mode = m;
       if (m === 'off') {
         if (group) { scene.remove(group); cards.forEach(function(c){ c.texture.dispose(); c.mesh.material.dispose(); c.mesh.geometry.dispose(); }); }
+        disposeTunnelField();
         if (connectorParticles) { scene.remove(connectorParticles); connectorParticles.geometry.dispose(); connectorParticles.material.dispose(); connectorParticles = null; }
         if (floorMirror) { scene.remove(floorMirror); floorMirror.geometry.dispose(); floorMirror.material.dispose(); floorMirror = null; }
         group = null; cards = [];
@@ -15443,6 +15894,23 @@ void main(){ vec4 t = texture2D(uDotTex, gl_PointCoord); if (t.a < 0.02) discard
     getMode: function(){ return mode; },
     update: function(dt) {
       if (!group) return;
+      if (isShelfTunnelMode(mode)) {
+        var reducedTunnelMotion = prefersReducedShelfMotion();
+        if (!shelfTunnelMotion.dragging && !reducedTunnelMotion) {
+          shelfTunnelMotion.targetYaw += shelfTunnelMotion.yawVelocity;
+          shelfTunnelMotion.targetPitch = clampRange(shelfTunnelMotion.targetPitch + shelfTunnelMotion.pitchVelocity, -0.72, 0.72);
+          shelfTunnelMotion.yawVelocity *= Math.pow(0.0025, Math.max(0.001, dt));
+          shelfTunnelMotion.pitchVelocity *= Math.pow(0.0015, Math.max(0.001, dt));
+          if (Math.abs(shelfTunnelMotion.yawVelocity) < 0.00005) shelfTunnelMotion.yawVelocity = 0;
+          if (Math.abs(shelfTunnelMotion.pitchVelocity) < 0.00005) shelfTunnelMotion.pitchVelocity = 0;
+        } else if (reducedTunnelMotion) {
+          shelfTunnelMotion.yawVelocity = 0;
+          shelfTunnelMotion.pitchVelocity = 0;
+        }
+        shelfTunnelMotion.yaw += (shelfTunnelMotion.targetYaw - shelfTunnelMotion.yaw) * (reducedTunnelMotion ? 0.24 : 0.12);
+        shelfTunnelMotion.pitch += (shelfTunnelMotion.targetPitch - shelfTunnelMotion.pitch) * (reducedTunnelMotion ? 0.24 : 0.12);
+        shelfTunnelMotion.depthPulse *= Math.pow(0.055, Math.max(0.001, dt));
+      }
       // PSP 滚动平滑
       centerSmooth += (centerTarget - centerSmooth) * 0.16;
       if (Math.abs(centerSmooth - centerTarget) < 0.001) centerSmooth = centerTarget;
@@ -15483,6 +15951,10 @@ void main(){ vec4 t = texture2D(uDotTex, gl_PointCoord); if (t.a < 0.02) discard
           group.rotation.x += ((-py * 0.010) - group.rotation.x) * 0.045;
           group.rotation.z += (0 - group.rotation.z) * 0.045;
         }
+      } else if (isShelfTunnelMode(mode)) {
+        group.renderOrder = 50;
+        group.position.set(0, 0, 0);
+        group.rotation.set(0, 0, 0);
       } else {
         group.renderOrder = 50;
         var t = uniforms.uTime.value;
@@ -15494,6 +15966,7 @@ void main(){ vec4 t = texture2D(uDotTex, gl_PointCoord); if (t.a < 0.02) discard
       for (var i = 0; i < cards.length; i++) {
         placeCard(cards[i], i, cards.length, mode);
       }
+      if (isShelfTunnelMode(mode)) updateTunnelField(dt);
       // 内容更新 (节流)
       if (uniforms.uTime.value - lastUpdate > 0.8) {
         lastUpdate = uniforms.uTime.value;
@@ -15528,6 +16001,10 @@ void main(){ vec4 t = texture2D(uDotTex, gl_PointCoord); if (t.a < 0.02) discard
         c.drawKey = '';
         drawCard(c, c.item);
       });
+      if (mode === 'tunnel') {
+        disposeTunnelField();
+        createTunnelField();
+      }
       if (contentList && contentList.refreshTheme) contentList.refreshTheme();
     },
     raycastCards: function(raycaster) {
@@ -15565,9 +16042,9 @@ void main(){ vec4 t = texture2D(uDotTex, gl_PointCoord); if (t.a < 0.02) discard
         if (!contentList) contentList = makeContentListManager();
         openCardIdx = card ? card.index : -1;
         contentList.open(action.playlistId, action.title || (card && card.item.title), card);
-        setShelfPinnedOpen(true, true);
+        if (isShelfRightMode(mode)) setShelfPinnedOpen(true, true);
         if (typeof updateEmptyHomeVisibility === 'function') updateEmptyHomeVisibility({ forceLoad: false });
-        if (typeof setFocusZone === 'function') setFocusZone('shelf-detail', true);
+        if (typeof setFocusZone === 'function') setFocusZone(isShelfTunnelMode(mode) ? null : 'shelf-detail', true);
       } else if (action.kind === 'empty') {
         togglePlaylistPanel(true);
       }
@@ -15588,9 +16065,9 @@ void main(){ vec4 t = texture2D(uDotTex, gl_PointCoord); if (t.a < 0.02) discard
         if (!contentList) contentList = makeContentListManager();
         openCardIdx = card.index;
         contentList.open(action.playlistId, action.title || card.item.title, card);
-        setShelfPinnedOpen(true, true);
+        if (isShelfRightMode(mode)) setShelfPinnedOpen(true, true);
         if (typeof updateEmptyHomeVisibility === 'function') updateEmptyHomeVisibility({ forceLoad: false });
-        if (typeof setFocusZone === 'function') setFocusZone('shelf-detail', true);
+        if (typeof setFocusZone === 'function') setFocusZone(isShelfTunnelMode(mode) ? null : 'shelf-detail', true);
       }
       if (action.kind === 'empty') togglePlaylistPanel(true);
     },
@@ -15599,7 +16076,7 @@ void main(){ vec4 t = texture2D(uDotTex, gl_PointCoord); if (t.a < 0.02) discard
       if (contentList) contentList.close();
       var hint = document.getElementById('hint');
       if (hint) hint.classList.toggle('shelf-hidden', shelfPinnedOpen);
-      if (typeof setFocusZone === 'function') setFocusZone(shelfPinnedOpen ? 'shelf-side' : null, true);
+      if (typeof setFocusZone === 'function') setFocusZone(isShelfTunnelMode(mode) ? null : (shelfPinnedOpen ? 'shelf-side' : null), true);
       if (typeof updateEmptyHomeVisibility === 'function') updateEmptyHomeVisibility({ forceLoad: false });
     },
     hasOpenContent: function() { return contentList && contentList.isOpen(); },
@@ -15999,7 +16476,8 @@ function makeContentListManager() {
   function place(row, i) {
     var delta = row.index - centerSmooth;
     var absD = Math.abs(delta);
-    if (absD > CONTENT_VISIBLE_RADIUS + 0.5) { row.mesh.visible = false; return; }
+    var contentVisibleRadius = isShelfTunnelMode() ? 10 : CONTENT_VISIBLE_RADIUS;
+    if (absD > contentVisibleRadius + 0.5) { row.mesh.visible = false; return; }
     row.mesh.visible = true;
     row.mesh.renderOrder = 240 + Math.round((CONTENT_VISIBLE_RADIUS + 1 - Math.min(absD, CONTENT_VISIBLE_RADIUS + 1)) * 14);
     var nowT = uniforms.uTime.value;
@@ -16009,6 +16487,30 @@ function makeContentListManager() {
     var parY = pointerParallax.y || 0;
     var parWeight = Math.max(0, 1 - absD * 0.12);
     var pulse = row.fxPulse || 0;
+    if (isShelfTunnelMode()) {
+      var reducedTunnel = prefersReducedShelfMotion();
+      var orbitAngle = delta * 0.61 + shelfTunnelMotion.yaw * 0.22 + (reducedTunnel ? 0 : nowT * 0.045);
+      var orbitRadius = 2.58 + Math.min(absD, 7) * 0.050;
+      var orbitX = Math.cos(orbitAngle) * orbitRadius;
+      var orbitY = Math.sin(orbitAngle) * orbitRadius * 0.61;
+      var orbitZ = -0.10 - Math.abs(Math.sin(orbitAngle)) * 0.42 - absD * 0.035;
+      if (!reducedTunnel) {
+        orbitX += Math.sin(nowT * 0.41 + row.index * 1.23) * 0.055;
+        orbitY += Math.cos(nowT * 0.35 + row.index * 0.89) * 0.045;
+        orbitZ += Math.sin(nowT * 0.29 + row.index * 0.67) * 0.035;
+      }
+      row.mesh.position.set(
+        orbitX * reveal + parX * 0.06 * parWeight,
+        orbitY * reveal + parY * 0.05 * parWeight,
+        orbitZ - (1 - reveal) * 1.1
+      );
+      var orbitScale = (absD < 0.5 ? 0.90 : Math.max(0.60, 0.76 - absD * 0.016)) * (0.82 + reveal * 0.18) * (1 + pulse * 0.065);
+      row.mesh.scale.setScalar(orbitScale);
+      row.mesh.rotation.set(0, 0, Math.sin(orbitAngle) * -0.035);
+      row.mesh.material.opacity = Math.min(1, (absD < 0.5 ? 1 : Math.max(0.46, 0.86 - absD * 0.055)) * reveal + pulse * 0.12) * shelfSettings().opacity;
+      row.mesh.renderOrder = 245 + Math.round((CONTENT_VISIBLE_RADIUS + 1 - Math.min(absD, CONTENT_VISIBLE_RADIUS + 1)) * 12);
+      return;
+    }
     var settle = group && group.userData ? (group.userData.rowSettle || 0) : 0;
     var layout = detailLayout();
     var shelfLook = shelfSettings();
@@ -16138,20 +16640,27 @@ function makeContentListManager() {
         scene.add(group);
       }
       var openLayout = detailLayout();
+      var openTunnelDetail = isShelfTunnelMode();
       var openSkullDetail = shouldUseSkullSafeShelfCamera() && !isShelfFixedMode();
       var openDynamicDetail = !openSkullDetail && shouldUseShelfDynamicCamera('shelf-detail') && camera;
       group.userData.detailIntro = 1;
-      group.position.set(openLayout.x + (openSkullDetail ? 0.10 : 0.16), openLayout.y - (openSkullDetail ? 0.02 : 0.024), openLayout.z - (openSkullDetail ? 0.05 : 0.070));
-      if ((openSkullDetail || openDynamicDetail) && camera) {
+      if (openTunnelDetail) {
+        group.position.set(0, 0, 1.04);
+        if (camera) group.quaternion.copy(camera.quaternion);
+        group.scale.setScalar(0.92);
+      } else {
+        group.position.set(openLayout.x + (openSkullDetail ? 0.10 : 0.16), openLayout.y - (openSkullDetail ? 0.02 : 0.024), openLayout.z - (openSkullDetail ? 0.05 : 0.070));
+      }
+      if (!openTunnelDetail && (openSkullDetail || openDynamicDetail) && camera) {
         group.quaternion.copy(camera.quaternion);
         group.rotateX(openLayout.rx);
         group.rotateY(openLayout.ry + (openSkullDetail ? 0.014 : 0.018));
-      } else {
+      } else if (!openTunnelDetail) {
         group.rotation.y = openLayout.ry + 0.018;
         group.rotation.x = openLayout.rx;
         group.rotation.z = 0;
       }
-      group.scale.setScalar(openLayout.scale * 0.965);
+      if (!openTunnelDetail) group.scale.setScalar(openLayout.scale * 0.965);
       if (window.gsap) {
         window.gsap.killTweensOf(group.userData);
         window.gsap.to(group.userData, { detailIntro: 0, duration: 0.48, ease: 'power3.out' });
@@ -16272,6 +16781,25 @@ function makeContentListManager() {
     },
     update: function(dt) {
       if (!group || !open) return;
+      if (isShelfTunnelMode()) {
+        var tunnelIntro = group.userData.detailIntro || 0;
+        group.position.set(0, 0, 1.04 - tunnelIntro * 0.16);
+        if (camera) group.quaternion.copy(camera.quaternion);
+        group.scale.setScalar(0.92 - tunnelIntro * 0.08);
+        centerSmooth += (centerTarget - centerSmooth) * 0.18;
+        if (Math.abs(centerSmooth - centerTarget) < 0.001) centerSmooth = centerTarget;
+        syncRenderedRows(false);
+        if (panel && panel.mesh) panel.mesh.visible = false;
+        for (var ti = 0; ti < rows.length; ti++) {
+          place(rows[ti], ti);
+          var tunnelCenter = Math.abs(rows[ti].index - centerSmooth) < 0.5;
+          if (rows[ti].lastCenter !== tunnelCenter) {
+            rows[ti].lastCenter = tunnelCenter;
+            drawRow(rows[ti], rows[ti].song, tunnelCenter);
+          }
+        }
+        return;
+      }
       var intro = group.userData.detailIntro || 0;
       var parX = pointerParallax.x || 0;
       var parY = pointerParallax.y || 0;
@@ -16305,6 +16833,7 @@ function makeContentListManager() {
       if (Math.abs(centerSmooth - centerTarget) < 0.001) centerSmooth = centerTarget;
       syncRenderedRows(false);
       if (panel && panel.mesh) {
+        panel.mesh.visible = true;
         var pr = Math.max(0, Math.min(1, (uniforms.uTime.value - openAnimAt) / 0.72));
         pr = pr * pr * (3 - 2 * pr);
         panel.mesh.material.opacity = 0.86 * pr * shelfSettings().opacity;
@@ -16609,7 +17138,7 @@ function updateShelfCardHoverSelection(e) {
       shelfManager.clearSelected();
       return;
     }
-  } else if (mode !== 'stage') {
+  } else if (mode !== 'stage' && !isShelfTunnelMode(mode)) {
     shelfManager.clearSelected();
     return;
   }
@@ -16669,7 +17198,9 @@ renderer.domElement.addEventListener('click', function(e){
       safeShelfCloseContent('shelf-card-return');
       if (isShelfRightMode(mode)) setShelfPinnedOpen(true, true);
       if (returnHit && returnHit.card) {
-        shelfManager.scrollBy(returnHit.card.index - shelfManager.getCenterIdx());
+        var returnDelta = returnHit.card.index - shelfManager.getCenterIdx();
+        shelfManager.scrollBy(returnDelta);
+        if (isShelfTunnelMode(mode)) shelfManager.openContent(returnHit.card.index);
       }
       return;
     }
@@ -16679,6 +17210,15 @@ renderer.domElement.addEventListener('click', function(e){
   var rightMode = isShelfRightMode(mode);
   var hit = pointerCardHit(rc, e, rightMode && !shelfPinnedOpen && shelfAlwaysVisible() ? 18 : undefined);
   if (rightMode && !shelfPinnedOpen && !canUseSideShelfWithoutPinnedOpen()) return;
+
+  if (hit && isShelfTunnelMode(mode)) {
+    var tunnelIdx = hit.card.index;
+    var tunnelDelta = tunnelIdx - shelfManager.getCenterIdx();
+    if (tunnelDelta) shelfManager.scrollBy(tunnelDelta);
+    shelfTunnelMotion.depthPulse = Math.max(shelfTunnelMotion.depthPulse, 0.72);
+    shelfManager.openContent(tunnelIdx);
+    return;
+  }
 
   if (hit) {
     if (rightMode) setShelfPinnedOpen(true, true);
@@ -16735,6 +17275,14 @@ renderer.domElement.addEventListener('wheel', function(e){
   if (shelfManager.hasOpenContent()) {
     var cl = shelfManager.getContentList();
     if (cl) {
+      if (isShelfTunnelMode(shelfManager.getMode())) {
+        markRenderInteraction('shelf-tunnel-wheel', 900);
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        cl.scrollBy(e.deltaY > 0 ? 1 : -1);
+        shelfTunnelMotion.depthPulse = Math.max(shelfTunnelMotion.depthPulse, 0.34);
+        return;
+      }
       var rowHit = cl.raycastRows(rc);
       var panelHit = !rowHit && cl.raycastPanel ? cl.raycastPanel(rc) : null;
       var panelScreenHit = !rowHit && !panelHit && cl.screenContainsPanel ? cl.screenContainsPanel(e.clientX, e.clientY) : false;
@@ -16749,6 +17297,14 @@ renderer.domElement.addEventListener('wheel', function(e){
   var inShelfArea = false;
   var canScrollShelf = shelfManager.canInteract && shelfManager.canInteract();
   var rightMode = isShelfRightMode(mode);
+  if (isShelfTunnelMode(mode) && canScrollShelf) {
+    markRenderInteraction('shelf-tunnel-wheel', 900);
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    shelfManager.scrollBy(e.deltaY > 0 ? 1 : -1);
+    shelfTunnelMotion.depthPulse = Math.max(shelfTunnelMotion.depthPulse, 0.46);
+    return;
+  }
   var cardWheelHit = canScrollShelf ? pointerCardHit(rc, e, rightMode && !shelfPinnedOpen && shelfAlwaysVisible() ? 18 : undefined) : null;
   if (canScrollShelf && e.shiftKey) inShelfArea = true;
   else if (canScrollShelf && cardWheelHit) inShelfArea = true;
@@ -17360,8 +17916,9 @@ function bindHomeLeadPanel() {
     card.style.setProperty('--lead-spot-y', '44%');
     card.style.setProperty('--lead-tilt-x', '0deg');
     card.style.setProperty('--lead-tilt-y', '0deg');
-    card.classList.remove('is-pressing');
+    card.classList.remove('is-pressing', 'is-interacting');
   }
+  card.addEventListener('pointerenter', function(){ card.classList.add('is-interacting'); });
   card.addEventListener('pointermove', function(e){
     var rect = card.getBoundingClientRect();
     var px = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
@@ -17370,11 +17927,72 @@ function bindHomeLeadPanel() {
     card.style.setProperty('--lead-spot-y', (py * 100).toFixed(1) + '%');
     card.style.setProperty('--lead-tilt-y', ((px - 0.5) * 3.2).toFixed(2) + 'deg');
     card.style.setProperty('--lead-tilt-x', ((0.5 - py) * 2.6).toFixed(2) + 'deg');
+    card.classList.add('is-interacting');
   });
   card.addEventListener('pointerleave', resetLead);
   card.addEventListener('pointerdown', function(){ card.classList.add('is-pressing'); });
   card.addEventListener('pointerup', function(){ card.classList.remove('is-pressing'); });
   card.addEventListener('pointercancel', resetLead);
+}
+function prefersReducedHomeMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function resetHomeCardMotion(card) {
+  if (!card) return;
+  card.style.setProperty('--home-card-spot-x', '50%');
+  card.style.setProperty('--home-card-spot-y', '50%');
+  card.style.setProperty('--home-card-tilt-x', '0deg');
+  card.style.setProperty('--home-card-tilt-y', '0deg');
+  card.classList.remove('is-interacting');
+}
+function bindHomeCardMotion() {
+  document.querySelectorAll('.home-card').forEach(function(card){
+    if (card._homeCardMotionBound) return;
+    card._homeCardMotionBound = true;
+    card.addEventListener('pointermove', function(e){
+      if (prefersReducedHomeMotion()) return;
+      var rect = card.getBoundingClientRect();
+      var px = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
+      var py = Math.max(0, Math.min(1, (e.clientY - rect.top) / Math.max(1, rect.height)));
+      card.style.setProperty('--home-card-spot-x', (px * 100).toFixed(1) + '%');
+      card.style.setProperty('--home-card-spot-y', (py * 100).toFixed(1) + '%');
+      card.style.setProperty('--home-card-tilt-y', ((px - .5) * 2.8).toFixed(2) + 'deg');
+      card.style.setProperty('--home-card-tilt-x', ((.5 - py) * 2.1).toFixed(2) + 'deg');
+      card.classList.add('is-interacting');
+    });
+    card.addEventListener('pointerleave', function(){ resetHomeCardMotion(card); });
+    card.addEventListener('pointercancel', function(){ resetHomeCardMotion(card); });
+  });
+}
+var homeActionTransitionToken = 0;
+function runHomeAction(source, action) {
+  if (typeof action !== 'function') return false;
+  if (prefersReducedHomeMotion()) {
+    action();
+    return false;
+  }
+  if (document.body.classList.contains('home-transitioning')) return false;
+  var home = document.getElementById('empty-home');
+  if (!home || !source) {
+    action();
+    return false;
+  }
+  var rect = source.getBoundingClientRect();
+  home.style.setProperty('--home-transition-x', ((rect.left + rect.width / 2) - home.getBoundingClientRect().left).toFixed(0) + 'px');
+  home.style.setProperty('--home-transition-y', ((rect.top + rect.height / 2) - home.getBoundingClientRect().top).toFixed(0) + 'px');
+  var token = ++homeActionTransitionToken;
+  source.classList.add('home-transition-source');
+  document.body.classList.add('home-transitioning');
+  window.setTimeout(function(){
+    if (token !== homeActionTransitionToken) return;
+    action();
+  }, 170);
+  window.setTimeout(function(){
+    if (token !== homeActionTransitionToken) return;
+    source.classList.remove('home-transition-source');
+    document.body.classList.remove('home-transitioning');
+  }, 460);
+  return false;
 }
 function setHomeLeadText(id, text) {
   var el = document.getElementById(id);
@@ -17391,6 +18009,7 @@ function renderHomeLeadPanel() {
   if (card) {
     card.classList.toggle('is-loading', !!homeDiscoverState.loading);
     card.classList.toggle('is-empty', !lead);
+    card.classList.toggle('is-live', !!playing);
   }
   if (coverEl) {
     coverEl.style.backgroundImage = cover ? 'url("' + cssImageUrl(cover) + '")' : '';
@@ -17642,7 +18261,7 @@ function renderHomeTiles() {
     var cover = homeTileCover(item);
     var itemKey = homeSongItemKey(item);
     var itemClass = 'home-song-item' + (cover ? ' has-cover' : '') + (item.kind === 'recent' ? ' is-recent' : '') + (item.focus ? ' is-focused' : '') + (!cover && homeDiscoverState.loading ? ' home-skeleton' : '');
-    return '<button class="' + itemClass + '" type="button" data-home-flow-index="' + i + '" data-home-flow-key="' + escHtml(itemKey) + '" onclick="handleHomeTileClick(' + i + ')" aria-label="播放 ' + escHtml(item.title || '') + '">' +
+    return '<button class="' + itemClass + '" type="button" data-home-flow-index="' + i + '" data-home-flow-key="' + escHtml(itemKey) + '" onclick="return runHomeAction(this, function(){ handleHomeTileClick(' + i + '); })" aria-label="播放 ' + escHtml(item.title || '') + '">' +
       '<div class="home-song-cover' + (cover ? ' has-cover' : '') + '" style="' + (cover ? 'background-image:url(&quot;' + escHtml(cssImageUrl(cover)) + '&quot;)' : '') + '"><span class="home-song-play"></span></div>' +
       '<div class="home-song-wave" aria-hidden="true">' + homeSongWaveBars(i) + '</div>' +
       '<span class="home-song-title">' + escHtml(item.title || '') + '</span>' +
@@ -17666,6 +18285,7 @@ function renderHomeTiles() {
   renderHomeMosaic(tiles);
 }
 function renderHomeDiscover() {
+  bindHomeCardMotion();
   var sub = document.getElementById('home-subtitle');
   var loggedOutHome = !homeDiscoverState.loggedIn && !hasAnyPlatformLogin();
   var weather = homeWeatherRadioState.weather;
@@ -17961,6 +18581,7 @@ function changeWeatherCity() {
 function shouldShowEmptyHomeCore(ignoreSplash) {
   if (!ignoreSplash && document.body.classList.contains('splash-active')) return false;
   if (immersiveMode) return false;
+  if (isShelfTunnelMode()) return false;
   if (homeForcedOpen) return true;
   if (homeSuppressed) return false;
   if (shelfPinnedOpen) return false;
@@ -17978,6 +18599,7 @@ function shouldShowEmptyHomeAfterSplash() {
 }
 function shouldForceEmptyHomeAfterSplash() {
   if (immersiveMode) return false;
+  if (isShelfTunnelMode()) return false;
   if (shelfPinnedOpen) return false;
   if (shelfManager && shelfManager.hasOpenContent && shelfManager.hasOpenContent()) return false;
   if (playQueue && playQueue.length) return false;
@@ -18007,6 +18629,7 @@ function updatePlayerCoverPageNavState(homeVisible) {
 }
 function shouldUseIdleWallpaperPreview(ignoreSplash) {
   if (!ignoreSplash && document.body.classList.contains('splash-active')) return false;
+  if (isShelfTunnelMode()) return false;
   if (immersiveMode || playing || (audio && !audio.paused)) return false;
   if (shelfPinnedOpen) return false;
   if (shelfManager && shelfManager.hasOpenContent && shelfManager.hasOpenContent()) return false;
@@ -21013,6 +21636,8 @@ function setPlayIcon(p) {
   document.getElementById('play-icon').innerHTML = p
     ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
     : '<path d="M8 5v14l11-7z"/>';
+  var homeLead = document.getElementById('home-lead-card');
+  if (homeLead) homeLead.classList.toggle('is-live', !!p);
 }
 function nextTrack() {
   if (!playQueue.length) return;
@@ -21737,20 +22362,71 @@ function renderQueuePanel(opts) {
   if (opts.animate && seq === queueRenderSeq) animateVisiblePanelList($ql, '.queue-item', document.getElementById('playlist-panel'), '.queue-item.now');
   renderMiniQueuePanel({ scrollCurrent: miniQueueOpen });
 }
+function playlistStatusFromResult(provider, result, loggedIn) {
+  if (!loggedIn) return null;
+  result = result || {};
+  var playlists = Array.isArray(result.playlists) ? result.playlists : [];
+  var attempts = Array.isArray(result.attempts) ? result.attempts : [];
+  var failed = !!(result.error || result.message || result.playlistReady === false);
+  return {
+    provider: normalizePlaylistProvider(provider),
+    loggedIn: !!(loggedIn || result.loggedIn),
+    failed: failed,
+    playlistReady: result.playlistReady !== false && !failed,
+    count: playlists.length,
+    total: Number(result.total || playlists.length) || playlists.length,
+    error: result.error || '',
+    message: result.message || result.error || '',
+    attempts: attempts,
+    source: result.playlistSource || ''
+  };
+}
+function playlistProviderAttemptText(status) {
+  var attempts = status && Array.isArray(status.attempts) ? status.attempts : [];
+  if (!attempts.length) return '';
+  return attempts.slice(-3).map(function(item){
+    var code = item && (item.error_code || item.status || item.statusCode || item.error || '');
+    var label = item && item.label || 'request';
+    var rows = item && item.rows != null ? (' / ' + item.rows + ' 行') : '';
+    return label + (code ? ('：' + code) : '') + rows;
+  }).join('；');
+}
+function playlistProviderAlertHtml(status) {
+  if (!status || !status.loggedIn || !status.failed) return '';
+  var provider = normalizePlaylistProvider(status.provider);
+  var name = playlistProviderDisplayName(provider);
+  var body = status.message || (name + '歌单读取失败，可以稍后重试。');
+  var detail = playlistProviderAttemptText(status);
+  return '<div class="pl-provider-alert ' + provider + '">' +
+    '<div class="pl-provider-alert-main">' +
+      '<div class="pl-provider-alert-title">' + escHtml(name + '歌单暂未同步') + '</div>' +
+      '<div class="pl-provider-alert-body">' + escHtml(body) + '</div>' +
+      (detail ? '<div class="pl-provider-alert-detail">' + escHtml(detail) + '</div>' : '') +
+    '</div>' +
+    '<button type="button" class="fx-mini-btn ghost pl-provider-alert-retry" data-provider-status-retry="' + provider + '">重试</button>' +
+  '</div>';
+}
 async function refreshUserPlaylists(force) {
   if (!loginStatus.loggedIn && !qqLoginStatus.loggedIn && !kugouLoginStatus.loggedIn && !sodaLoginStatus.loggedIn) {
     resetPlaylistPanelRenderLimit();
+    playlistProviderStatus = { netease: null, qq: null, kugou: null, soda: null };
     document.getElementById('pl-list').innerHTML = '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">登录后显示个人歌单</div>';
     var podcastListLoggedOut = document.getElementById('podcast-list');
     if (podcastListLoggedOut) podcastListLoggedOut.innerHTML = '<div style="text-align:center;padding:14px 0;color:rgba(255,255,255,.28);font-size:11.5px">登录后显示我的播客</div>';
     return;
   }
+  if (!loginStatus.loggedIn) playlistProviderStatus.netease = null;
+  if (!qqLoginStatus.loggedIn) playlistProviderStatus.qq = null;
+  if (!kugouLoginStatus.loggedIn) playlistProviderStatus.kugou = null;
+  if (!sodaLoginStatus.loggedIn) playlistProviderStatus.soda = null;
   if (force) resetPlaylistPanelRenderLimit();
   var hasCachedQQPlaylists = userPlaylists.some(function(pl){ return pl && pl.provider === 'qq'; });
   var needsQQRefresh = qqLoginStatus.loggedIn && !hasCachedQQPlaylists;
+  var hasCachedKugouPlaylists = userPlaylists.some(function(pl){ return pl && pl.provider === 'kugou'; });
+  var needsKugouRefresh = kugouLoginStatus.loggedIn && !hasCachedKugouPlaylists && !playlistProviderStatus.kugou;
   var hasCachedSodaPlaylists = userPlaylists.some(function(pl){ return pl && pl.provider === 'soda'; });
   var needsSodaRefresh = sodaLoginStatus.loggedIn && !hasCachedSodaPlaylists;
-  if (!force && !needsQQRefresh && !needsSodaRefresh && (userPlaylists.length || myPodcastCollections.length)) {
+  if (!force && !needsQQRefresh && !needsKugouRefresh && !needsSodaRefresh && (userPlaylists.length || myPodcastCollections.length)) {
     var cachedAnimate = isPlaylistPanelVisibleForRender();
     renderUserPlaylistsList({ animate: cachedAnimate });
     renderMyPodcastCollections({ animate: cachedAnimate });
@@ -21767,16 +22443,24 @@ async function refreshUserPlaylists(force) {
     function safeListRequest(promise, fallback, label) {
       return promise.catch(function(e){
         console.warn(label || 'playlist request failed', e);
+        fallback = Object.assign({}, fallback || {});
+        fallback.error = fallback.error || (e && e.message) || String(e || 'PLAYLIST_REQUEST_FAILED');
+        fallback.message = fallback.message || fallback.error;
+        fallback.playlistReady = false;
         return fallback;
       });
     }
     var result = await Promise.all([
-      loginStatus.loggedIn ? safeListRequest(apiJson('/api/user/playlists'), { playlists: [] }, 'NetEase playlists failed') : Promise.resolve({ playlists: [] }),
+      loginStatus.loggedIn ? safeListRequest(apiJson('/api/user/playlists'), { provider: 'netease', loggedIn: true, playlists: [] }, 'NetEase playlists failed') : Promise.resolve({ provider: 'netease', playlists: [] }),
       loginStatus.loggedIn ? safeListRequest(apiJson('/api/podcast/my'), { collections: [], loggedIn: false }, 'NetEase podcasts failed') : Promise.resolve({ collections: [], loggedIn: false }),
-      qqLoginStatus.loggedIn ? safeListRequest(apiJson('/api/qq/user/playlists'), { playlists: [] }, 'QQ playlists failed') : Promise.resolve({ playlists: [] }),
-      kugouLoginStatus.loggedIn ? safeListRequest(apiJson('/api/kugou/user/playlists'), { playlists: [] }, 'Kugou playlists failed') : Promise.resolve({ playlists: [] }),
-      sodaLoginStatus.loggedIn ? safeListRequest(apiJson('/api/soda/user/playlists'), { playlists: [] }, 'Soda playlists failed') : Promise.resolve({ playlists: [] })
+      qqLoginStatus.loggedIn ? safeListRequest(apiJson('/api/qq/user/playlists'), { provider: 'qq', loggedIn: true, playlists: [] }, 'QQ playlists failed') : Promise.resolve({ provider: 'qq', playlists: [] }),
+      kugouLoginStatus.loggedIn ? safeListRequest(apiJson('/api/kugou/user/playlists'), { provider: 'kugou', loggedIn: true, playlists: [] }, 'Kugou playlists failed') : Promise.resolve({ provider: 'kugou', playlists: [] }),
+      sodaLoginStatus.loggedIn ? safeListRequest(apiJson('/api/soda/user/playlists'), { provider: 'soda', loggedIn: true, playlists: [] }, 'Soda playlists failed') : Promise.resolve({ provider: 'soda', playlists: [] })
     ]);
+    playlistProviderStatus.netease = playlistStatusFromResult('netease', result[0], loginStatus.loggedIn);
+    playlistProviderStatus.qq = playlistStatusFromResult('qq', result[2], qqLoginStatus.loggedIn);
+    playlistProviderStatus.kugou = playlistStatusFromResult('kugou', result[3], kugouLoginStatus.loggedIn);
+    playlistProviderStatus.soda = playlistStatusFromResult('soda', result[4], sodaLoginStatus.loggedIn);
     var neteaseLists = (result[0].playlists || []).map(function(pl){ pl.provider = 'netease'; pl.source = 'netease'; return pl; });
     qqPlaylists = (result[2].playlists || []).map(function(pl){ pl.provider = 'qq'; pl.source = 'qq'; return pl; });
     var kugouLists = (result[3] && result[3].playlists || []).map(function(pl){ pl.provider = 'kugou'; pl.source = 'kugou'; return pl; });
@@ -22160,8 +22844,11 @@ function renderUserPlaylistsList(opts) {
   opts = opts || {};
   var $pl = document.getElementById('pl-list');
   var seq = ++playlistRenderSeq;
+  var providerAlerts = ['kugou', 'qq', 'netease', 'soda'].map(function(provider){
+    return playlistProviderAlertHtml(playlistProviderStatus[provider]);
+  }).join('');
   if (!userPlaylists.length) {
-    $pl.innerHTML = '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">未找到歌单</div>';
+    $pl.innerHTML = providerAlerts || '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">未找到歌单</div>';
     return;
   }
   function playlistCardHtml(pl) {
@@ -22195,7 +22882,7 @@ function renderUserPlaylistsList(opts) {
     renderedCount += visible.length;
     return visible;
   }
-  $pl.innerHTML = groups.map(function(group){
+  $pl.innerHTML = providerAlerts + groups.map(function(group){
     var items = visibleGroupItems(group.items);
     if (!items.length) return '';
     return '<div class="pl-section-label">' + group.label + '</div>' + items.map(playlistCardHtml).join('');
@@ -22229,6 +22916,15 @@ function renderMyPodcastCollections(opts) {
   if (opts.animate) animateVisiblePanelList($pod, '.pl-card', document.getElementById('playlist-panel'));
 }
 document.getElementById('pl-list').addEventListener('click', function(e){
+  var providerRetry = e.target && e.target.closest ? e.target.closest('[data-provider-status-retry]') : null;
+  if (providerRetry) {
+    e.preventDefault();
+    e.stopPropagation();
+    var retryProvider = providerRetry.getAttribute('data-provider-status-retry') || '';
+    if (retryProvider) playlistProviderStatus[retryProvider] = null;
+    refreshUserPlaylists(true);
+    return;
+  }
   var loadMore = e.target && e.target.closest ? e.target.closest('[data-pl-load-more]') : null;
   if (loadMore) {
     e.preventDefault();
@@ -25656,6 +26352,12 @@ function setShelfMode(m) {
   normalizeShelfState(fx);
   fx.shelf = m;
   applyShelfModePresencePolicy(fx);
+  document.body.classList.toggle('shelf-tunnel-active', m === 'tunnel');
+  if (m !== 'tunnel') endShelfTunnelPointerDrag();
+  if (m === 'tunnel') {
+    shelfOpenAnimAt = uniforms && uniforms.uTime ? uniforms.uTime.value : performance.now() / 1000;
+    shelfTunnelMotion.depthPulse = 0.85;
+  }
   document.querySelectorAll('#shelf-seg button').forEach(function(b){ b.classList.toggle('active', b.dataset.shelf === m); });
   if (!isShelfRightMode(m)) {
     if (shelfManager && shelfManager.hasOpenContent && shelfManager.hasOpenContent()) safeShelfCloseContent('shelf-mode-change');
@@ -25664,6 +26366,7 @@ function setShelfMode(m) {
     shelfHoverCue.value = 0;
     shelfHoverCue.zoneActive = false;
     shelfHoverCue.enteredAt = 0;
+    if (m === 'tunnel' && typeof setFocusZone === 'function') setFocusZone(null, true);
   } else if (m === 'side') {
     if (!shelfPinnedOpen) {
       shelfHoverCue.target = 0;
@@ -25677,6 +26380,7 @@ function setShelfMode(m) {
     shelfHoverCue.enteredAt = 0;
   }
   if (shelfManager) shelfManager.setMode(m);
+  if (typeof updateEmptyHomeVisibility === 'function') updateEmptyHomeVisibility({ forceLoad: false });
   var searchArea = document.getElementById('search-area');
   var bottomBar = document.getElementById('bottom-bar');
   if (searchArea) searchArea.classList.toggle('stage-mode', m === 'stage');
@@ -25926,6 +26630,42 @@ async function checkLatestUpdate(manual) {
   }
 }
 
+function localizedUpdateHero(updateAvailable) {
+  return updateAvailable ? '发现新版本，建议更新。' : '当前已是最新版本。';
+}
+
+function localizedUpdateNotes(version, release, updateAvailable) {
+  var normalized = String(version || '').replace(/^v/i, '');
+  var knownNotes = {
+    '1.1.7': [
+      '启动后自动检查一次更新',
+      '之后每小时自动检查一次',
+      '更新入口可随时手动检查'
+    ],
+    '1.1.6': [
+      '下载完整安装包时支持暂停和继续',
+      '继续下载会重新连接可用线路',
+      '下载完成后可直接打开安装包'
+    ]
+  };
+  if (knownNotes[normalized]) return knownNotes[normalized].slice();
+  if (release && Array.isArray(release.notes) && release.notes.length) {
+    var chineseNotes = release.notes
+      .filter(function(text){ return /[\u3400-\u9fff]/.test(String(text || '')); })
+      .slice(0, 4);
+    if (chineseNotes.length) return chineseNotes;
+  }
+  return updateAvailable ? [
+    '发现新版本，建议更新',
+    '可下载完整安装包',
+    '下载过程中可暂停或继续'
+  ] : [
+    '当前版本已是最新',
+    '启动时会自动检查更新',
+    '也可以点击更新按钮手动检查'
+  ];
+}
+
 function applyLatestUpdateInfo(data) {
   data = data || {};
   var release = data.release || {};
@@ -25939,10 +26679,8 @@ function applyLatestUpdateInfo(data) {
   updatePreviewState.patchAvailable = !!(release.patchAvailable && release.patch && release.patch.downloadUrl);
   updatePreviewState.patchUrl = updatePreviewState.patchAvailable ? release.patch.downloadUrl : '';
   updatePreviewState.patchFallbackTried = false;
-  updatePreviewState.hero = release.summary || (updatePreviewState.updateAvailable ? '发现新版本，建议更新。' : '当前版本，更新检测已就绪。');
-  if (Array.isArray(release.notes) && release.notes.length) {
-    updatePreviewState.notes = release.notes.slice(0, 4);
-  }
+  updatePreviewState.hero = localizedUpdateHero(updatePreviewState.updateAvailable);
+  updatePreviewState.notes = localizedUpdateNotes(updatePreviewState.version, release, updatePreviewState.updateAvailable);
   if (updatePreviewState.status === 'checking') updatePreviewState.status = 'idle';
   renderUpdatePreviewPanel();
   setUpdatePreviewVisible(true);
@@ -25976,9 +26714,17 @@ function startUpdateIconBreathing() {
 }
 
 function renderUpdatePreviewPanel() {
+  var title = document.getElementById('update-modal-title');
+  var entry = document.getElementById('update-entry');
   var version = document.getElementById('update-modal-version');
   var hero = document.getElementById('update-hero-main');
   var list = document.getElementById('update-list');
+  if (title) title.textContent = updatePreviewState.updateAvailable ? '发现新版本' : '版本更新';
+  if (entry) {
+    var entryLabel = updatePreviewState.updateAvailable ? '发现新版本' : '检查更新';
+    entry.title = entryLabel;
+    entry.setAttribute('aria-label', entryLabel);
+  }
   if (version) version.textContent = 'v' + updatePreviewState.version;
   if (hero) hero.textContent = updatePreviewState.hero || '当前版本，更新检测已就绪。';
   if (list) {
